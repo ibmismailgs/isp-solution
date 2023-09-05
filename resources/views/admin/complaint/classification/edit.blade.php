@@ -1,7 +1,5 @@
 <x-app-layout>
-
     @section('title', 'Edit Classification')
-
     <x-slot name="header">
         <div class="page-title-wrapper">
             <div class="page-title-heading">
@@ -13,7 +11,7 @@
                 </div>
             </div>
             <div class="page-title-actions">
-                <a href="{{ route('admin.classification.index') }}" type="button" class="btn btn-sm btn-dark">
+                <a title="Back Button" href="{{ route('admin.classification.index') }}" type="button" class="btn btn-sm btn-dark">
                     <i class="fas fa-arrow-left mr-1"></i>
                     Back
                 </a>
@@ -21,14 +19,13 @@
         </div>
     </x-slot>
 
-    <!-- Main Content -->
     <div class="container-fluid">
          <div class="page-header">
             <div class="d-inline">
                 @if (Session::has('error'))
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     {{Session::get('error')}}
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <button title="Close Button" type="button" class="close" data-dismiss="alert" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -43,13 +40,10 @@
                             @csrf
                             @method('PUT')
                             <div class="row">
-
                                 <div class="col-sm-6">
                                     <div class="form-group">
                                         <label for="name">Classification Name<span class="text-red">*</span></label>
                                         <input type="text" name="name" id="name" value="{{ $complaint->name }}" class="form-control @error('name') is-invalid @enderror" placeholder="Please enter an area name" required>
-
-                                        <div class="help-block with-errors"></div>
 
                                         @error('name')
                                         <span class="text-danger" role="alert">
@@ -62,21 +56,11 @@
                                  <div class="col-sm-6">
                                     <div class="form-group">
                                         <label for="status"> Status <span class="text-red">*</span></label>
+
                                         <select name="status" id="status" class="form-control">
-                                            <option value="{{ $complaint->status }}" selected=""> @if ($complaint->status == 1) Active @else Inactive
-                                            @endif</option>
-                                            <option value="1">Active</option>
-                                            <option value="0">Inactive</option>
+                                            <option value="1" {{ $complaint->status == 1 ? 'selected' : '' }}>Active</option>
+                                            <option value="0" {{ $complaint->status == 0 ? 'selected' : '' }}>Inactive</option>
                                         </select>
-
-                                        <div class="help-block with-errors"></div>
-
-                                        @error('status')
-                                        <span class="text-danger" role="alert">
-                                            <strong>{{ $message }}</strong>
-                                        </span>
-                                        @enderror
-
                                     </div>
                                 </div>
 
@@ -89,7 +73,7 @@
                             </div>
                             <div class="row mt-30">
                                 <div class="col-sm-12">
-                                    <button type="submit" class="btn btn-success mr-2">Update</button>
+                                    <button title="Update Button" type="submit" class="btn btn-success mr-2">Update</button>
                                 </div>
                             </div>
                         </form>
@@ -97,9 +81,5 @@
                 </div>
             </div>
         </div>
-
     </div>
-    @push('js')
-
-    @endpush
 </x-app-layout>

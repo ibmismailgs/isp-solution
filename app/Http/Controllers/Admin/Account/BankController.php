@@ -6,6 +6,7 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\Admin\Account\Bank;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Yajra\DataTables\Facades\DataTables;
 
 class BankController extends Controller
@@ -28,18 +29,15 @@ class BankController extends Controller
     public function bank(Request $request)
     {
         try {
-            //--- Integrating This Collection Into Datatables
             if ($request->ajax()) {
-
                 $data = Bank::orderBy('id', 'desc')->get();
-
                 return Datatables::of($data)
                     ->addColumn('status', function ($data) {
+
                         $button = ' <div class="custom-control custom-switch">';
                         $button .= ' <input type="checkbox" class="custom-control-input changeStatus" id="customSwitch' . $data->id . '" getId="' . $data->id . '" name="status"';
 
                         if ($data->status == 1) {
-
                             $button .= "checked";
                         }
                         $button .= '><label for="customSwitch' . $data->id . '" class="custom-control-label" for="switch1"></label></div>';
@@ -47,17 +45,27 @@ class BankController extends Controller
                     })
 
                     ->addColumn('description', function ($data) {
-                        return Str::limit($data->description, 20);
+                        $result = isset($data->description) ? $data->description : '--' ;
+                        return Str::limit( $result, 20) ;
                     })
 
                     ->addColumn('action', function (Bank $data) {
-                        return '<a href="' . route('admin.bank.edit', $data->id) . ' " class="btn btn-sm btn-info"><i class="fa fa-edit"></i></a>
+                        if (Auth::user()->can('bank_edit')) {
+                            $edit = '<a href="' . route('admin.bank.edit', $data->id) . ' " class="btn btn-sm btn-info" title="Edit"><i class="fa fa-edit"></i></a>';
+                        } else {
+                            $edit = "";
+                        }
+                        if (Auth::user()->can('bank_delete')) {
 
-                    <button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.bank.destroy', $data->id) . ' " title="Delete"><i class="fa fa-trash-alt"></i></button>';
+                            $delete = ' <button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.bank.destroy', $data->id) . ' " title="Delete"><i class="fa fa-trash-alt"></i></button> ';
+                        } else {
+                            $delete = "";
+                        }
+                        return $edit.$delete;
                     })
 
                     ->rawColumns(['status', 'action', 'description'])
-                    ->toJson(); //--- Returning Json Data To Client Side
+                    ->toJson();
             }
         } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
@@ -86,7 +94,6 @@ class BankController extends Controller
      */
     public function store(Request $request)
     {
-        // dd($request->all());
         $messages = array(
             'name.required' => 'Enter bank name',
         );
@@ -133,7 +140,6 @@ class BankController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    // start update function
     public function update(Request $request, $id)
     {
         $messages = array(
@@ -166,7 +172,6 @@ class BankController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    // start delete function
     public function destroy($id)
     {
         try {
@@ -177,13 +182,10 @@ class BankController extends Controller
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-    // end delete function
 
-    //starts status change function
     public function StatusChange(Request $request)
     {
         $id = $request->id;
-
         $status_check   = Bank::findOrFail($id);
         $status         = $status_check->status;
 
@@ -198,10 +200,8 @@ class BankController extends Controller
         Bank::where('id', $id)->update($data);
         if ($status_update == 1) {
             return "success";
-            exit();
         } else {
             return "failed";
         }
     }
-    //end status change function
 }

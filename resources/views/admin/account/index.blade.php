@@ -1,9 +1,10 @@
 <x-app-layout>
     @push('css')
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="{{ asset('backend/plugins/DataTables/datatables.min.css') }}">
     <link rel="stylesheet" type="text/css" href="{{asset('app-assets/vendors/css/extensions/toastr.css')}}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css" integrity="sha512-O03ntXoVqaGUTAeAmvQ2YSzkCvclZEcPQu1eqloPaHfJ5RuNGiS4l+3duaidD801P50J28EHyonCV06CUlTSag==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     @endpush
-    @section('title', 'Account')
+    @section('title', 'Account List')
 
     <x-slot name="header">
         <div class="page-title-wrapper">
@@ -16,22 +17,24 @@
                 </div>
             </div>
             <div class="page-title-actions">
-                <a href="{{ route('admin.account.create') }}" type="button" class="btn btn-sm btn-info">
+                @can('account_create')
+                <a title="Create Button" href="{{ route('admin.account.create') }}" type="button" class="btn btn-sm btn-info">
                     <i class="fas fa-plus mr-1"></i>
                     Create
                 </a>
+                @endcan
+
             </div>
         </div>
     </x-slot>
 
-    <!-- Main Content -->
     <div class="container-fluid">
     	<div class="page-header">
             <div class="d-inline">
                 @if (Session::has('message'))
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
                         {{Session::get('message')}}
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <button title="Close Button" type="button" class="close" data-dismiss="alert" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
@@ -40,7 +43,7 @@
                 @if (Session::has('error'))
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
                         {{Session::get('error')}}
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <button title="Close Button" type="button" class="close" data-dismiss="alert" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
@@ -77,12 +80,14 @@
 
     </div>
     @push('js')
-    <script src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+    <script src="{{ asset('backend/plugins/DataTables/datatables.min.js') }}"></script>
     <script src="{{ asset('app-assets/vendors/js/extensions/toastr.min.js') }}"></script>
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js" integrity="sha512-Zq9o+E00xhhR/7vJ49mxFNJ0KQw1E1TMWkPTxrWcnpfEFDEXgUiwJHIKit93EW/XxE31HSI5GEOW06G6BF1AtA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js" integrity="sha512-AA1Bzp5Q0K1KanKKmvN/4d3IRKVlv9PYgwFPvm32nPO6QS8yH1HO7LbgB1pgiOxPtfeg5zEn2ba64MUcqJx6CA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
 
         $(document).ready( function () {
-         var i = 1;
 
         var dTable = $('#example').DataTable({
             order: [],
@@ -90,9 +95,6 @@
             processing: true,
             responsive: false,
             serverSide: true,
-            language: {
-              processing: '<i class="ace-icon fa fa-spinner fa-spin orange bigger-500" style="font-size:60px;margin-top:50px;"></i>'
-            },
             scroller: {
                 loadingIndicator: false
             },
@@ -103,11 +105,7 @@
             },
 
             columns: [
-                {
-                    "render": function() {
-                        return i++;
-                    }
-                },
+                {data: 'DT_RowIndex', name: 'DT_RowIndex'},
                 {data: 'name', name: 'name'},
                 {data: 'types.name', name: 'types'},
                 {data: 'account_no', name: 'account_no'},
@@ -115,58 +113,116 @@
                 {data: 'initial_balance', name: 'initial_balance'},
                 {data: 'status', searchable: false, orderable: false},
                 {data: 'action', searchable: false, orderable: false}
-
             ],
-
+            dom: "<'row'<'col-sm-2'l><'col-sm-7 text-center'B><'col-sm-3'f>>tipr",
+                    buttons: [
+                            {
+                                extend: 'copy',
+                                className: 'btn-sm btn-info',
+                                title: 'Account List',
+                                header: true,
+                                footer: true,
+                                exportOptions: {
+                                    columns: ['0,1,2,3,4,5'],
+                                }
+                            },
+                            {
+                                extend: 'csv',
+                                className: 'btn-sm btn-success',
+                                title: 'Accounts',
+                                header: true,
+                                footer: true,
+                                exportOptions: {
+                                    columns: ['0,1,2,3,4,5'],
+                                }
+                            },
+                            {
+                                extend: 'excel',
+                                className: 'btn-sm btn-dark',
+                                title: 'Accounts',
+                                header: true,
+                                footer: true,
+                                exportOptions: {
+                                    columns: ['0,1,2,3,4,5'],
+                                }
+                            },
+                            {
+                                extend: 'pdf',
+                                className: 'btn-sm btn-primary',
+                                title: 'Account List',
+                                pageSize: 'A2',
+                                header: true,
+                                footer: true,
+                                exportOptions: {
+                                    columns: ['0,1,2,3,4,5'],
+                                }
+                            },
+                            {
+                                extend: 'print',
+                                className: 'btn-sm btn-danger',
+                                title: 'Account List',
+                                pageSize: 'A2',
+                                header: true,
+                                footer: true,
+                                orientation: 'landscape',
+                                exportOptions: {
+                                    columns: ['0,1,2,3,4,5'],
+                                    stripHtml: false
+                                }
+                            }
+                        ],
             });
         });
 
-        // start delete function
-    $('#example').on('click', '.btn-delete[data-remote]', function (e) {
-        e.preventDefault();
-        let url = $(this).data('remote');
-        if (confirm('are you sure, want to delete this?')) {
-            $.ajax({
-                url: url,
-                type: 'POST',
-                dataType: 'json',
-                data: {submit: true, _method: 'delete', _token: "{{ csrf_token() }}"}
-            }).always(function (data) {
-                $('#example').DataTable().ajax.reload();
-                if(data){
-                    toastr.success('This data is successfully deleted.', { positionClass: 'toast-bottom-full-width', });
-                    return false;
-                }else{
-                    toastr.error('Error!!. This data is not deleted.', { positionClass: 'toast-bottom-full-width', });
-                    return false;
+        $('#example').on('click', '.btn-delete[data-remote]', function (e) {
+                e.preventDefault();
+                const url = $(this).data('remote');
+                swal({
+                        title: `Are you sure you want to delete this record?`,
+                        text: "If you delete this, it will be gone forever.",
+                        buttons: true,
+                        dangerMode: true,
+                    }).then((willDelete) => {
+                if (willDelete) {
+                    $.ajax({
+                        url: url,
+                        type: 'POST',
+                        dataType: 'json',
+                        data: {submit: true, _method: 'delete', _token: "{{ csrf_token() }}"}
+                    }).always(function (data) {
+                        $('#example').DataTable().ajax.reload();
+                        if(data){
+                            toastr.success('This data is successfully deleted.', { positionClass: 'toast-bottom-full-width', });
+                            return false;
+                        }else{
+                            toastr.error('Error!!. This data is not deleted.', { positionClass: 'toast-bottom-full-width', });
+                            return false;
+                        }
+                    });
                 }
+                });
             });
-        }
-    });
 
-    // end delete function
 
-    // {--status change start here --}
+        $('.card').on('click', '.changeStatus', function (e) {
+            e.preventDefault();
 
-    $('.card').on('click', '.changeStatus', function (e) {
-        e.preventDefault();
-
-        var id = $(this).attr('getId');
-        if (confirm('are you sure, want to change this status?')) {
-
+            var id = $(this).attr('getId');
+            swal({
+                title: `Are you sure you ?`,
+                text: `Want to change this status?`,
+                buttons: true,
+                dangerMode: true,
+            }).then((changeStatus) => {
+          if (changeStatus) {
             $.ajax({
                 'url':"{{ route('admin.account-status') }}",
-
                 'type':'post',
-
                 'dataType':'text',
-
                 'data':{id:id},
-
                 success:function(data)
                 {
                     $('#example').DataTable().ajax.reload();
-
                     if(data == "success"){
                         toastr.success('This status has been changed to Active.', { positionClass: 'toast-bottom-full-width', });
                         return false;
@@ -176,11 +232,10 @@
                     }
                 }
             });
-        }
+          }
+        });
 
     })
-
-
     </script>
 
     @endpush

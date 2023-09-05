@@ -1,3 +1,7 @@
+<?php
+    $generalSettings = App\Models\Admin\Settings\GeneralSetting::first();
+?>
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
@@ -8,14 +12,20 @@
     <link href="{{ asset('backend/auth/css/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ asset('backend/auth/css/style.css') }}" rel="stylesheet">
 
+    <style>
+        body{
+            background: rgb(2,0,36);
+            background: linear-gradient(90deg, rgb(74, 71, 238) 0%, rgb(139, 0, 74) 35%, rgb(59, 154, 231) 100%);
+        }
+
+    </style>
+
 </head>
 
 <body>
-<div class="container">
-    <div class="card card-container">
-        <a href="{{ route('login') }}">
-            <img id="profile-img" class="profile-img-card" src="//ssl.gstatic.com/accounts/ui/avatar_2x.png" />
-        </a>
+<div class="container ">
+    <div class="card card-container ">
+        <img id="profile-img" class="profile-img-card" src="{{ asset('img/profile.png') }}" />
 
         {{ $slot }}
     </div><!-- /card-container -->

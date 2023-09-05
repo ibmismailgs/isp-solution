@@ -7,17 +7,21 @@ use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
 use App\Models\Admin\Settings\Area;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Models\Admin\Settings\Device;
 use App\Models\Admin\Settings\Package;
 use App\Models\Admin\Settings\Identity;
+use Illuminate\Support\Facades\Response;
 use Yajra\DataTables\Facades\DataTables;
 use App\Models\Admin\Subscriber\Subscriber;
 use App\Models\Admin\Settings\ConnectionType;
 use App\Models\Admin\Subscriber\SubscriberCategory;
+
 
 class SubscriberController extends Controller
 {
@@ -38,35 +42,70 @@ class SubscriberController extends Controller
     public function subscribers(Request $request)
     {
         try {
-            $data = Subscriber::with('idcards', 'areas', 'categories', 'connections', 'packages', 'devices')->orderBy('id', 'desc')->get();
+            $data = Subscriber::with('idcards', 'areas', 'categories', 'connections', 'packages', 'devices')->orderBy('id', 'desc');
+
             if ($request->ajax()) {
                 return Datatables::of($data)
-                    ->addColumn('status', function ($data) {
-                        $button = ' <div class="custom-control custom-switch">';
-                        $button .= ' <input type="checkbox" class="custom-control-input changeStatus" id="customSwitch' . $data->id . '" getId="' . $data->id . '" name="status"';
+                    ->addColumn('status', function (Subscriber $data) {
+                        if (Auth::user()->can('client_status')) {
+                            $button = ' <div class="custom-control custom-switch">';
+                            $button .= ' <input type="checkbox" class="custom-control-input changeStatus" id="customSwitch' . $data->id . '" getId="' . $data->id . '" name="status"';
 
-                        if ($data->status == 1) {
+                            if ($data->status == 1) {
 
-                            $button .= "checked";
+                                $button .= "checked";
+                            }
+                            $button .= '><label for="customSwitch' . $data->id . '" class="custom-control-label" for="switch1"></label></div>';
+                            return $button;
+                        } else {
+                            return "--";
                         }
-                        $button .= '><label for="customSwitch' . $data->id . '" class="custom-control-label" for="switch1"></label></div>';
-                        return $button;
                     })
 
                     ->addColumn('description', function ($data) {
-                        return Str::limit($data->description, 20);
+                        $result = isset($data->description) ? $data->description : '--' ;
+                        return Str::limit( $result, 20) ;
+                    })
+
+                    ->addColumn('area_name', function (Subscriber $data) {
+                        $name = isset($data->areas->name) ? $data->areas->name : null;
+                        return $name;
+                    })
+
+                    ->addColumn('package_name', function (Subscriber $data) {
+                        $name = isset($data->packages->name) ? $data->packages->name : null;
+                        return $name;
                     })
 
                     ->addColumn('action', function (Subscriber $data) {
-                        return '<a href="' . route('admin.subscriber.show', $data->id) . ' " class="btn btn-sm btn-primary"><i class="fa fa-eye"></i></a>
 
-                        <a href="' . route('admin.subscriber.edit', $data->id) . ' " class="btn btn-sm btn-info"><i class="fa fa-edit"></i></a>
+                        if (Auth::user()->can('access_to_client')) {
+                           $details =  '<a href="' . route('admin.client-dashboard.show', $data->id) . ' " class="btn btn-sm btn-info"><i class="fa fa-user" aria-hidden="true" title="Profile"></i></a> ';
+                        } else {
+                                $details = " ";
+                        }
 
-                    <button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.subscriber.destroy', $data->id) . ' " title="Delete"><i class="fa fa-trash-alt"></i></button>';
+                        if (Auth::user()->can('client_show')) {
+                            $show = '<a href="' . route('admin.subscriber.show', $data->id) . ' " class="btn btn-sm btn-primary" title="SHow"><i class="fa fa-eye"></i></a> ';
+                        } else {
+                            $show  = " ";
+                        }
+                        if (Auth::user()->can('client_edit')) {
+                            $edit = '<a href="' . route('admin.subscriber.edit', $data->id) . ' " class="btn btn-sm btn-info" title="Edit"><i class="fa fa-edit"></i></a> ';
+                        } else {
+                            $edit = " ";
+                        }
+                        if (Auth::user()->can('client_delete')) {
+                            $delete = ' <button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.subscriber.destroy', $data->id) . ' " title="Delete"><i class="fa fa-trash-alt"></i></button>';
+                        } else {
+                            $delete = " ";
+                        }
+                        return $details.$show.$edit.$delete;
                     })
 
-                    ->rawColumns(['status', 'action', 'description'])
-                    ->toJson(); //--- Returning Json Data To Client Side
+                    ->addIndexColumn()
+                    ->rawColumns(['status', 'action', 'description', 'area_name', 'package_name'])
+                    ->toJson();
             }
         } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
@@ -80,7 +119,7 @@ class SubscriberController extends Controller
      */
     public function create()
     {
-        try{
+        try {
             $sid = Subscriber::count();
             $areas = Area::orderBy('id', 'desc')->where('status', 1)->get();
             $connections = ConnectionType::orderBy('id', 'desc')->where('status', 1)->get();
@@ -88,11 +127,10 @@ class SubscriberController extends Controller
             $idcards  = Identity::orderBy('id', 'desc')->where('status', 1)->get();
             $devices = Device::orderBy('id', 'desc')->where('status', 1)->get();
             $categories = SubscriberCategory::orderBy('id', 'desc')->where('status', 1)->get();
-            return view('admin.subscriber.create', compact('sid','areas', 'connections', 'packages', 'idcards', 'devices' , 'categories'));
-         } catch (\Exception $exception) {
+            return view('admin.subscriber.create', compact('sid', 'areas', 'connections', 'packages', 'idcards', 'devices', 'categories'));
+        } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
         }
-
     }
 
     /**
@@ -103,13 +141,10 @@ class SubscriberController extends Controller
      */
     public function store(Request $request)
     {
-    //    dd($request->all());
+        // dd($request->card_type_id);
         $messages = array(
             'name.required' => 'Enter client name',
             'initialize_date.required' => 'Enter initialize date',
-            // 'birth_date.required' => 'Enter birth date',
-            // 'card_type_id.required' => 'Select ID Card type',
-            // 'card_no.required' => 'Enter card no',
             'area_id.required' => 'Select area',
             'address.required' => 'Enter your address',
             'contact_no.required' => 'Enter your contact number',
@@ -117,7 +152,6 @@ class SubscriberController extends Controller
             'connection_id.required' => 'Select connection type',
             'package_id.required' => 'Select package',
             'device_id.required' => 'Select device type',
-            // 'mac_address.required' => 'Enter mac address',
             'ip_address.required' => 'Enter ip address',
             'email.required' => 'Enter your email address',
             'password.required' => 'Create password',
@@ -126,17 +160,18 @@ class SubscriberController extends Controller
         $this->validate($request, array(
             'password' => 'required|min:6',
             'subscriber_id' => 'required|string|unique:subscribers,subscriber_id',
+            'email' => 'required|string|unique:subscribers,email',
+            'contact_no' => 'required|string|unique:subscribers,contact_no',
         ), $messages);
 
         DB::beginTransaction();
 
         try {
             $data = new Subscriber();
-
             $data->subscriber_id = $request->subscriber_id;
             $data->name = $request->name;
-            $data->initialize_date = $request->initialize_date;
-            $data->birth_date = $request->birth_date;
+            $data->initialize_date = Carbon::parse($request->initialize_date)->format('Y-m-d');
+            $data->birth_date = Carbon::parse($request->birth_date)->format('Y-m-d');
             $data->card_type_id = json_encode($request->card_type_id);
             $data->card_no = json_encode($request->card_no);
             $data->area_id = $request->area_id;
@@ -146,29 +181,32 @@ class SubscriberController extends Controller
             $data->connection_id  = $request->connection_id;
             $data->package_id = $request->package_id;
             $data->device_id = $request->device_id;
-            // $data->mac_address = $request->mac_address;
             $data->ip_address = $request->ip_address;
             $data->email = $request->email;
             $data->password = Hash::make($request->password);
             $data->status = $request->status;
             $data->description = $request->description;
-            // dd($data);
             $data->save();
 
             $user = new User();
             $user->subscriber_id = $data->id;
             $user->name = $request->name;
             $user->type = 2;
-            $user->status = 0;
+            $user->status = 1;
             $user->email  = $request->email;
             $user->password  = Hash::make($request->password);
             $user->save();
-
+            $user->assignRole($request->role);
             DB::commit();
 
-            return redirect()->route('admin.subscriber.index')
-                    ->with('message', 'Client created successfully');
+            DB::table('model_has_roles')->insert([
+                    'role_id' => 2,
+                    'model_type' => 'App\\Models\\User',
+                    'model_id' => $user->id,
+                ]);
 
+            return redirect()->route('admin.subscriber.index')
+                ->with('message', 'Client created successfully');
         } catch (\Exception $exception) {
             DB::rollback();
             return redirect()->back()->with('error', $exception->getMessage());
@@ -185,8 +223,9 @@ class SubscriberController extends Controller
     {
         try {
             $idcards  = Identity::orderBy('id', 'desc')->where('status', 1)->get();
+            $roles = Role::orderBy('id', 'desc')->get();
             $data = Subscriber::with('idcards', 'areas', 'categories', 'connections', 'packages', 'devices')->orderBy('id', 'desc')->find($id);
-            return view('admin.subscriber.show', compact('data','idcards'));
+            return view('admin.subscriber.show', compact('data', 'idcards', 'roles'));
         } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
         }
@@ -200,7 +239,7 @@ class SubscriberController extends Controller
      */
     public function edit($id)
     {
-        try{
+        try {
             $data = Subscriber::findOrFail($id);
             $areas = Area::orderBy('id', 'desc')->where('status', 1)->get();
             $connections = ConnectionType::orderBy('id', 'desc')->where('status', 1)->get();
@@ -209,9 +248,8 @@ class SubscriberController extends Controller
             $cards  = Identity::orderBy('id', 'desc')->where('status', 1)->get();
             $devices = Device::orderBy('id', 'desc')->where('status', 1)->get();
             $categories = SubscriberCategory::orderBy('id', 'desc')->where('status', 1)->get();
-
             return view('admin.subscriber.edit', compact('data', 'areas', 'connections', 'packages', 'idcards', 'devices', 'categories', 'cards'));
-         } catch (\Exception $exception) {
+        } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
@@ -225,12 +263,10 @@ class SubscriberController extends Controller
      */
     public function update(Request $request, $id)
     {
+
         $messages = array(
             'name.required' => 'Enter subscriber name',
             'initialize_date.required' => 'Enter initialize date',
-            // 'birth_date.required' => 'Enter birth date',
-            // 'card_type_id.required' => 'Select ID Card type',
-            // 'card_no.required' => 'Enter card No',
             'area_id.required' => 'Select area',
             'address.required' => 'Enter your address',
             'contact_no.required' => 'Enter your contact number',
@@ -238,7 +274,6 @@ class SubscriberController extends Controller
             'connection_id.required' => 'Select connection type',
             'package_id.required' => 'Select package',
             'device_id.required' => 'Select device type',
-            // 'mac_address.required' => 'Enter mac address',
             'ip_address.required' => 'Enter ip address',
             'email.required' => 'Enter your email address',
         );
@@ -246,30 +281,26 @@ class SubscriberController extends Controller
         $this->validate($request, array(
             'name' => 'required',
             'initialize_date' => 'required',
-            // 'birth_date' => 'required',
-            // 'card_type_id' => 'required',
-            // 'card_no' => 'required',
             'area_id' => 'required',
             'address' => 'required',
-            'contact_no' => 'required',
             'category_id' => 'required',
             'connection_id' => 'required',
             'package_id' => 'required',
             'device_id' => 'required',
-            // 'mac_address' => 'required',
             'ip_address' => 'required',
-            'email' => 'required',
+            'contact_no' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:11|unique:subscribers,contact_no,' . $id . ',id,deleted_at,NULL',
+
+            'email' => 'required|unique:subscribers,email,' . $id . ',id,deleted_at,NULL',
         ), $messages);
 
         DB::beginTransaction();
 
         try {
             $subscriber = Subscriber::findOrFail($id);
-            // dd($subscriber);
             $subscriber->subscriber_id = $request->subscriber_id;
             $subscriber->name = $request->name;
-            $subscriber->initialize_date = $request->initialize_date;
-            $subscriber->birth_date = $request->birth_date;
+            $subscriber->initialize_date = Carbon::parse($request->initialize_date)->format('Y-m-d');
+            $subscriber->birth_date = Carbon::parse($request->birth_date)->format('Y-m-d');
             $subscriber->card_type_id = json_encode($request->card_type_id);
             $subscriber->card_no = json_encode($request->card_no);
             $subscriber->area_id = $request->area_id;
@@ -279,7 +310,6 @@ class SubscriberController extends Controller
             $subscriber->connection_id  = $request->connection_id;
             $subscriber->package_id = $request->package_id;
             $subscriber->device_id = $request->device_id;
-            // $subscriber->mac_address = $request->mac_address;
             $subscriber->ip_address = $request->ip_address;
             $subscriber->email = $request->email;
             $subscriber->password = Hash::make($request->password);
@@ -293,11 +323,12 @@ class SubscriberController extends Controller
             $user->email  = $request->email;
             $user->password  = Hash::make($request->password);
             $user->update();
+            $user->syncRoles($request->role);
 
             DB::commit();
 
             return redirect()->route('admin.subscriber.index')
-            ->with('message', 'Client updated successfully');
+                ->with('message', 'Client updated successfully');
         } catch (\Exception $exception) {
             DB::rollback();
             return redirect()->back()->with('error', $exception->getMessage());
@@ -313,7 +344,7 @@ class SubscriberController extends Controller
 
     public function packages(Request $request)
     {
-        try{
+        try {
             $package = Package::where('connection_type_id', $request->id)->orderBy('id', 'desc')->where('status', 1)->get();
             $data = [];
             foreach ($package as $key => $value) {
@@ -323,35 +354,32 @@ class SubscriberController extends Controller
                 $item['amount'] = $value->amount;
                 array_push($data, $item);
             }
-         return response()->json($data);
-         } catch (\Exception $exception) {
+            return response()->json($data);
+        } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
 
-    // start delete function
     public function destroy($id)
     {
         try {
             $data =  Subscriber::findOrFail($id);
             if ($data) {
                 $user = User::where('subscriber_id', $id)->first();
+                DB::table('model_has_roles')->where('role_id', 2)->where('model_id', $user->id)->delete();
                 $user->delete();
                 $data->delete();
                 return redirect()->route('admin.subscriber.index')
-                ->with('message', 'Subscriber deleted successfully');
+                    ->with('message', 'Subscriber deleted successfully');
             }
         } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-    // end delete function
 
-    //starts status change function
     public function StatusChange(Request $request)
     {
         $id = $request->id;
-
         $status_check   = Subscriber::findOrFail($id);
         $status         = $status_check->status;
 
@@ -366,11 +394,19 @@ class SubscriberController extends Controller
         Subscriber::where('id', $id)->update($data);
         if ($status_update == 1) {
             return "success";
-            exit();
         } else {
             return "failed";
         }
     }
-    //end status change function
-}
 
+    public function sampleExcel(){
+        return Response::download('public/sample/client_sample_excel.xlsx', 'client_sample_excel.xlsx');
+    }
+
+    // import client data from excel
+    public function import(Request $request)
+    {
+        Excel::import(new Subscriber, $request->file('import_file'));
+        return back();
+    }
+}

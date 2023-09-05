@@ -57,6 +57,12 @@ hr {
   border-top-width: 1px; /* 3 */
 }
 
+.menu-item:after {
+    content: '--';
+    position: absolute;
+    left: 29px;
+}
+
 /*
 Add the correct text decoration in Chrome, Edge, and Safari.
 */

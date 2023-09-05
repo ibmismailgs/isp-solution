@@ -1,9 +1,5 @@
 <x-app-layout>
-    @push('css')
-
-    @endpush
     @section('title', "Staff Details")
-
     <x-slot name="header" id="printableArea">
         <div class="page-title-wrapper">
             <div class="page-title-heading">
@@ -16,28 +12,26 @@
             </div>
 
             <div class="page-title-actions hidden-print">
-                 <a href="{{ route('admin.staff.index') }}" type="button" class="btn btn-sm btn-dark">
+                 <a title="Back Button" href="{{ route('admin.staff.index') }}" type="button" class="btn btn-sm btn-dark">
                     <i class="fas fa-arrow-left mr-1"></i>
                     Back
                 </a>
 
-                <a href="{{ route('admin.staff.create') }}" type="button" class="btn btn-sm btn-info">
+                <a title="Create Button" href="{{ route('admin.staff.create') }}" type="button" class="btn btn-sm btn-info">
                     <i class="fas fa-plus mr-1"></i>
                     Create
                 </a>
-
             </div>
         </div>
     </x-slot>
 
-    <!-- Main Content -->
     <div class="container-fluid">
     	<div class="page-header">
             <div class="d-inline">
                 @if (Session::has('error'))
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
                         {{Session::get('error')}}
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <button title="CLose Button" type="button" class="close" data-dismiss="alert" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
@@ -58,6 +52,11 @@
                                 </tr>
 
                                 <tr>
+                                    <th>Staff Role</th>
+                                    <td>{{ $data->roles->name }}</td>
+                                </tr>
+
+                                <tr>
                                     <th>Date Of Birth</th>
                                     <td>{{ $data->birth_date }}</td>
                                 </tr>
@@ -72,8 +71,10 @@
                                     <td>
                                         @if( $data->gender == 1)
                                             Male
-                                        @else
+                                        @elseif($data->gender == 2)
                                             Female
+                                        @else
+                                            Other
                                         @endif
                                     </td>
                                 </tr>
@@ -116,7 +117,7 @@
 
                                 <tr>
                                     <th>Images</th>
-                                    <td><img height="50px" width="100px" src="{{asset('img/'.$data->image)}}" alt="">
+                                    <td><img title="Image" height="50px" width="100px" src="{{asset('img/'.$data->image)}}" alt="">
                                     </td>
                                 </tr>
 
@@ -131,9 +132,5 @@
                 </div>
             </div>
         </div>
-
     </div>
-    @push('js')
-
-    @endpush
 </x-app-layout>

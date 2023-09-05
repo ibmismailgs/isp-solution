@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\Admin\Account;
 
-use App\Http\Controllers\Controller;
-use App\Models\Admin\Account\AccountType;
-use Illuminate\Http\Request;
-use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Yajra\DataTables\Facades\DataTables;
+use App\Models\Admin\Account\AccountType;
 
 class AccountTypeController extends Controller
 {
@@ -28,13 +29,13 @@ class AccountTypeController extends Controller
     public function accountTypes(Request $request)
     {
         try {
-            //--- Integrating This Collection Into Datatables
             if ($request->ajax()) {
 
                 $data = AccountType::orderBy('id', 'desc')->get();
 
                 return Datatables::of($data)
                     ->addColumn('status', function ($data) {
+
                         $button = ' <div class="custom-control custom-switch">';
                         $button .= ' <input type="checkbox" class="custom-control-input changeStatus" id="customSwitch' . $data->id . '" getId="' . $data->id . '" name="status"';
 
@@ -47,17 +48,30 @@ class AccountTypeController extends Controller
                     })
 
                     ->addColumn('description', function ($data) {
-                        return Str::limit($data->description, 20);
+                        $result = isset($data->description) ? $data->description : '--' ;
+                        return Str::limit( $result, 20) ;
                     })
 
                     ->addColumn('action', function (AccountType $data) {
-                        return '<a href="' . route('admin.account-type.edit', $data->id) . ' " class="btn btn-sm btn-info"><i class="fa fa-edit"></i></a>
 
-                    <button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.account-type.destroy', $data->id) . ' " title="Delete"><i class="fa fa-trash-alt"></i></button>';
+                        if (Auth::user()->can('account_type_edit')) {
+                            $show = '<a href="' . route('admin.account-type.edit', $data->id) . ' " class="btn btn-sm btn-info" title="Edit"><i class="fa fa-edit"></i></a> ';
+                        }
+                        else{
+                            $show = "";
+                        }
+
+                        if(Auth::user()->can('account_type_delete')){
+                            $delete = '<button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.account-type.destroy', $data->id) . ' " title="Delete"><i class="fa fa-trash-alt"></i></button>';
+                        }
+                        else{
+                            $delete = "";
+                        }
+                        return $show.$delete;
                     })
 
                     ->rawColumns(['status', 'action', 'description'])
-                    ->toJson(); //--- Returning Json Data To Client Side
+                    ->toJson();
             }
         } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
@@ -86,7 +100,6 @@ class AccountTypeController extends Controller
      */
     public function store(Request $request)
     {
-        // dd($request->all());
         $messages = array(
             'name.required' => 'Enter bank account type',
         );
@@ -133,7 +146,6 @@ class AccountTypeController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    // start update function
     public function update(Request $request, $id)
     {
         $messages = array(
@@ -177,13 +189,10 @@ class AccountTypeController extends Controller
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-    // end delete function
 
-    //starts status change function
     public function StatusChange(Request $request)
     {
         $id = $request->id;
-
         $status_check   = AccountType::findOrFail($id);
         $status         = $status_check->status;
 
@@ -198,10 +207,8 @@ class AccountTypeController extends Controller
         AccountType::where('id', $id)->update($data);
         if ($status_update == 1) {
             return "success";
-            exit();
         } else {
             return "failed";
         }
     }
-    //end status change function
 }

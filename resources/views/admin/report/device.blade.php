@@ -1,6 +1,6 @@
 <x-app-layout>
 	@push('css')
-	<link rel="stylesheet" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
+	<link rel="stylesheet" href="{{ asset('backend/plugins/DataTables/datatables.min.css') }}">
 	<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.1/themes/base/jquery-ui.css">
 	@endpush
 
@@ -15,12 +15,6 @@
 					<h4>Client List By Devices</h4>
 				</div>
 			</div>
-			{{-- <div class="page-title-actions">
-				<a href="{{ route('admin.bank.index') }}" type="button" class="btn btn-sm btn-dark">
-					<i class="fas fa-arrow-left mr-1"></i>
-					Back
-				</a>
-			</div> --}}
 		</div>
 	</x-slot>
 
@@ -31,7 +25,7 @@
 				@if (Session::has('error'))
 				<div class="alert alert-danger alert-dismissible fade show" role="alert">
 					{{Session::get('error')}}
-					<button type="button" class="close" data-dismiss="alert" aria-label="Close">
+					<button title="Close Button" type="button" class="close" data-dismiss="alert" aria-label="Close">
 						<span aria-hidden="true">&times;</span>
 					</button>
 				</div>
@@ -65,7 +59,7 @@
 
 				<div class="row mt-30">
 					<div class="col-sm-12">
-						<button type="submit" id="search" class="btn btn-sm btn-primary float-left search"> Submit</button>
+						<button title="Submit Button" type="submit" id="search" class="btn btn-sm btn-primary float-left search"> Submit</button>
 					</div>
 				</div>
 			</div>
@@ -84,7 +78,7 @@
 									<th> Amount </th>
 									<th> Contact </th>
 									<th> IP Address </th>
-									<th> Address </th>
+									<th> Action </th>
 								</tr>
 							</thead>
 
@@ -100,14 +94,13 @@
 
 	</div>
 	@push('js')
-	<script src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+	<script src="{{ asset('backend/plugins/DataTables/datatables.min.js') }}"></script>
 	<script src="https://code.jquery.com/ui/1.13.1/jquery-ui.js"></script>
 	<script>
 
 		$('#search').on('click',function(event){
 			event.preventDefault();
 			var device_id = $("#device_id").val();
-			var x = 1;
 
 			var table =  $('#example').DataTable({
 				order: [],
@@ -115,9 +108,6 @@
 				processing: true,
 				serverSide: true,
 				"bDestroy": true,
-				language: {
-					processing: '<i class="ace-icon fa fa-spinner fa-spin orange bigger-500" style="font-size:60px;margin-top:50px;"></i>'
-				},
 
 				ajax: {
 					url: "{{route('admin.report-devices')}}",
@@ -127,20 +117,73 @@
 					},
 				},
 				columns: [
-				{
-					"render": function() {
-						return x++;
-					}
-				},
+                {data: 'DT_RowIndex', name: 'DT_RowIndex'},
 				{data: 'subscriber_id', name: 'subscriber_id'},
 				{data: 'name', name: 'name'},
-				{data: 'packages.amount', name: 'packages'},
+				{data: 'package_amount', name: 'package_amount'},
 				{data: 'contact_no', name: 'contact_no'},
 				{data: 'ip_address', name: 'ip_address'},
 				{data: 'action', searchable: false, orderable: false},
              ],
-			});
-		});
+             dom: "<'row'<'col-sm-2'l><'col-sm-7 text-center'B><'col-sm-3'f>>tipr",
+                    buttons: [
+                            {
+                                extend: 'copy',
+                                className: 'btn-sm btn-info',
+                                title: 'Devices',
+                                header: true,
+                                footer: true,
+                                exportOptions: {
+                                    columns: ['0,1,2,3,4,5'],
+                                }
+                            },
+                            {
+                                extend: 'csv',
+                                className: 'btn-sm btn-success',
+                                title: 'Devices',
+                                header: true,
+                                footer: true,
+                                exportOptions: {
+                                    columns: ['0,1,2,3,4,5'],
+                                }
+                            },
+                            {
+                                extend: 'excel',
+                                className: 'btn-sm btn-dark',
+                                title: 'Devices',
+                                header: true,
+                                footer: true,
+                                exportOptions: {
+                                    columns: ['0,1,2,3,4,5'],
+                                }
+                            },
+                            {
+                                extend: 'pdf',
+                                className: 'btn-sm btn-primary',
+                                title: 'Devices',
+                                pageSize: 'A2',
+                                header: true,
+                                footer: true,
+                                exportOptions: {
+                                    columns: ['0,1,2,3,4,5'],
+                                }
+                            },
+                            {
+                                extend: 'print',
+                                className: 'btn-sm btn-danger',
+                                title: 'Devices',
+                                pageSize: 'A2',
+                                header: true,
+                                footer: true,
+                                orientation: 'landscape',
+                                exportOptions: {
+                                    columns: ['0,1,2,3,4,5'],
+                                    stripHtml: false
+                                }
+                            }
+                        ],
+                });
+            });
 	</script>
 	@endpush
 </x-app-layout>

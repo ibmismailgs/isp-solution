@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Admin\Account;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\Admin\Account\Bank;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Admin\Account\Account;
-use App\Models\Admin\Account\AccountType;
 use Yajra\DataTables\Facades\DataTables;
+use App\Models\Admin\Account\AccountType;
+use App\Models\Admin\Account\Transaction;
 
 class AccountController extends Controller
 {
@@ -30,8 +33,8 @@ class AccountController extends Controller
     public function account(Request $request)
     {
         try {
-            //--- Integrating This Collection Into Datatables
             if ($request->ajax()) {
+                $user = Auth()->user();
 
                 $data = Account::with('banks', 'types')->orderBy('id', 'desc')->get();
 
@@ -41,7 +44,6 @@ class AccountController extends Controller
                         $button .= ' <input type="checkbox" class="custom-control-input changeStatus" id="customSwitch' . $data->id . '" getId="' . $data->id . '" name="status"';
 
                         if ($data->status == 1) {
-
                             $button .= "checked";
                         }
                         $button .= '><label for="customSwitch' . $data->id . '" class="custom-control-label" for="switch1"></label></div>';
@@ -49,19 +51,32 @@ class AccountController extends Controller
                     })
 
                     ->addColumn('description', function ($data) {
-                        return Str::limit($data->description, 20);
+                        $result = isset($data->description) ? $data->description : '--' ;
+                        return Str::limit( $result, 20) ;
                     })
 
-                    ->addColumn('action', function (Account $data) {
-                        return '<a href="' . route('admin.account.show', $data->id) . ' " class="btn btn-sm btn-primary"><i class="fa fa-eye"></i></a>
+                    ->addColumn('action', function (Account $data) use ($user) {
+                        if (Auth::user()->can('account_show')) {
+                           $show = '<a href="' . route('admin.account.show', $data->id) . ' " class="btn btn-sm btn-primary" title="View"><i class="fa fa-eye"></i></a>';}
+                           else{
+                            return " ";
+                           }
+                           if (Auth::user()->can('account_edit')) {
+                           $edit = ' <a href="' . route('admin.account.edit', $data->id) . ' " class="btn btn-sm btn-info" title="Edit"><i class="fa fa-edit"></i></a> ';}
+                           else{
+                            return " ";
+                           }
+                           if (Auth::user()->can('account_delete')) {
+                           $delete = ' <button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.account.destroy', $data->id) . ' " title="Delete"><i class="fa fa-trash-alt"></i></button> ';}
+                           else{
+                            return " ";
+                           }
+                        return $show.$edit.$delete;
 
-                        <a href="' . route('admin.account.edit', $data->id) . ' " class="btn btn-sm btn-info"><i class="fa fa-edit"></i></a>
-
-                        <button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.account.destroy', $data->id) . ' " title="Delete"><i class="fa fa-trash-alt"></i></button>';
                     })
-
+                    ->addIndexColumn()
                     ->rawColumns(['status', 'action', 'description'])
-                    ->toJson(); //--- Returning Json Data To Client Side
+                    ->toJson();
             }
         } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
@@ -92,7 +107,6 @@ class AccountController extends Controller
      */
     public function store(Request $request)
     {
-        // dd($request->all());
         $messages = array(
             'name.required' => 'Enter account name',
             'bank_id.required' => 'Select bank',
@@ -113,8 +127,6 @@ class AccountController extends Controller
             'initial_balance' => 'required|numeric',
         ), $messages);
 
-        // dd('ismail');
-
         try {
             $data = new Account();
             $data->account_type_id = $request->account_type_id;
@@ -126,7 +138,6 @@ class AccountController extends Controller
             $data->initial_balance = $request->initial_balance;
             $data->status = $request->status;
             $data->description = $request->description;
-            // dd($data);
             $data->save();
 
             return redirect()->route('admin.account.index')
@@ -173,10 +184,8 @@ class AccountController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    // start update function
     public function update(Request $request, $id)
     {
-        // dd($request->all());
         $messages = array(
             'name.required' => 'Enter account name',
             'bank_id.required' => 'Select bank',
@@ -187,8 +196,6 @@ class AccountController extends Controller
             'initial_balance.required' => 'Enter initial balance',
         );
 
-        // dd('ismail');
-
         $this->validate($request, array(
             'name' => 'required|string|',
             'bank_id' => 'required',
@@ -198,8 +205,6 @@ class AccountController extends Controller
             'branch_address' => 'required|string',
             'initial_balance' => 'required|numeric',
         ), $messages);
-
-        // dd('ismailh');
 
         try {
             $data = Account::findOrFail($id);
@@ -212,7 +217,6 @@ class AccountController extends Controller
             $data->initial_balance = $request->initial_balance;
             $data->status = $request->status;
             $data->description = $request->description;
-            // dd($data);
             $data->update();
 
             return redirect()->route('admin.account.index')
@@ -221,7 +225,6 @@ class AccountController extends Controller
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-    // end update function
 
     /**
      * Remove the specified resource from storage.
@@ -230,7 +233,6 @@ class AccountController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    // start delete function
     public function destroy($id)
     {
         try {
@@ -241,13 +243,10 @@ class AccountController extends Controller
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-    // end delete function
 
-    //starts status change function
     public function StatusChange(Request $request)
     {
         $id = $request->id;
-
         $status_check   = Account::findOrFail($id);
         $status         = $status_check->status;
 
@@ -262,10 +261,8 @@ class AccountController extends Controller
         Account::where('id', $id)->update($data);
         if ($status_update == 1) {
             return "success";
-            exit();
         } else {
             return "failed";
         }
     }
-    //end status change function
 }

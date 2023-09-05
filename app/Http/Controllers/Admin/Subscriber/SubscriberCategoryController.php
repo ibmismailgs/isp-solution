@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Admin\Subscriber;
 
 use Illuminate\Support\Str;
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Admin\Subscriber\SubscriberCategory;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Yajra\DataTables\Facades\DataTables;
+use App\Models\Admin\Subscriber\SubscriberCategory;
 
 class SubscriberCategoryController extends Controller
 {
@@ -29,33 +30,47 @@ class SubscriberCategoryController extends Controller
     {
         try {
             $data = SubscriberCategory::orderBy('id', 'desc')->get();
-            //--- Integrating This Collection Into Datatables
             if ($request->ajax()) {
+
                 return Datatables::of($data)
+
                     ->addColumn('status', function ($data) {
-                        $button = ' <div class="custom-control custom-switch">';
-                        $button .= ' <input type="checkbox" class="custom-control-input changeStatus" id="customSwitch' . $data->id . '" getId="' . $data->id . '" name="status"';
 
-                        if ($data->status == 1) {
+                        if (Auth::user()->can('client_category_status')) {
+                            $button = ' <div class="custom-control custom-switch">';
+                            $button .= ' <input type="checkbox" class="custom-control-input changeStatus" id="customSwitch' . $data->id . '" getId="' . $data->id . '" name="status"';
 
-                            $button .= "checked";
+                            if ($data->status == 1) {
+                                $button .= "checked";
+                            }
+                            $button .= '><label for="customSwitch' . $data->id . '" class="custom-control-label" for="switch1"></label></div>';
+                            return $button;
+                        } else {
+                            return "--";
                         }
-                        $button .= '><label for="customSwitch' . $data->id . '" class="custom-control-label" for="switch1"></label></div>';
-                        return $button;
                     })
 
                     ->addColumn('description', function ($data) {
-                        return Str::limit($data->description, 20);
+                        $result = isset($data->description) ? $data->description : '--' ;
+                        return Str::limit( $result, 20) ;
                     })
 
                     ->addColumn('action', function (SubscriberCategory $data) {
-                        return '<a href="' . route('admin.subscriber-category.edit', $data->id) . ' " class="btn btn-sm btn-info"><i class="fa fa-edit"></i></a>
-
-                    <button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.subscriber-category.destroy', $data->id) . ' " title="Delete"><i class="fa fa-trash-alt"></i></button>';
+                        if (Auth::user()->can('client_category_edit')) {
+                            $edit = '<a href="' . route('admin.subscriber-category.edit', $data->id) . ' " class="btn btn-sm btn-info" title="Edit"><i class="fa fa-edit"></i></a> ';
+                        } else {
+                            $edit = " ";
+                        }
+                        if (Auth::user()->can('client_category_delete')) {
+                            $delete = ' <button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.subscriber-category.destroy', $data->id) . ' " title="Delete"><i class="fa fa-trash-alt"></i></button>';
+                        } else {
+                            $delete = " ";
+                        }
+                        return $edit.$delete;
                     })
 
                     ->rawColumns(['status', 'action', 'description'])
-                    ->toJson(); //--- Returning Json Data To Client Side
+                    ->toJson();
             }
         } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
@@ -69,9 +84,9 @@ class SubscriberCategoryController extends Controller
      */
     public function create()
     {
-        try{
+        try {
             return view('admin.subscriber.category.create');
-            } catch (\Exception $exception) {
+        } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
@@ -84,7 +99,6 @@ class SubscriberCategoryController extends Controller
      */
     public function store(Request $request)
     {
-        // dd($request->all());
         $messages = array(
             'name.required' => 'Please enter a subscriber  category name',
         );
@@ -95,14 +109,13 @@ class SubscriberCategoryController extends Controller
 
         try {
             $data = new SubscriberCategory();
-
             $data->name = $request->name;
             $data->status = $request->status;
             $data->description = $request->description;
             $data->save();
 
             return redirect()->route('admin.subscriber-category.index')
-            ->with('message', 'Connection created successfully');
+                ->with('message', 'Connection created successfully');
         } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
         }
@@ -116,16 +129,14 @@ class SubscriberCategoryController extends Controller
      */
     public function edit($id)
     {
-         try{
+        try {
             $data = SubscriberCategory::findOrFail($id);
-         return view('admin.subscriber.category.edit', compact('data'));
+            return view('admin.subscriber.category.edit', compact('data'));
         } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-    // start auto code generate function
 
-    //  {{-- end auto code generate function --}}
 
     /**
      * Update the specified resource in storage.
@@ -135,7 +146,6 @@ class SubscriberCategoryController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    // start update function
     public function update(Request $request, $id)
     {
         $messages = array(
@@ -154,12 +164,11 @@ class SubscriberCategoryController extends Controller
             $data->update();
 
             return redirect()->route('admin.subscriber-category.index')
-            ->with('message', 'Category updated successfully');
+                ->with('message', 'Category updated successfully');
         } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-    // end update function
 
     /**
      * Remove the specified resource from storage.
@@ -168,7 +177,6 @@ class SubscriberCategoryController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    // start delete function
     public function destroy($id)
     {
         try {
@@ -179,13 +187,10 @@ class SubscriberCategoryController extends Controller
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-    // end delete function
 
-    //starts status change function
     public function StatusChange(Request $request)
     {
         $id = $request->id;
-
         $status_check   = SubscriberCategory::findOrFail($id);
         $status         = $status_check->status;
 
@@ -200,10 +205,8 @@ class SubscriberCategoryController extends Controller
         SubscriberCategory::where('id', $id)->update($data);
         if ($status_update == 1) {
             return "success";
-            exit();
         } else {
             return "failed";
         }
     }
-    //end status change function
 }

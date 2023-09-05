@@ -7,11 +7,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Admin\Settings\Area;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use App\Models\Admin\Billing\Billing;
 use App\Models\Admin\Settings\Package;
 use App\Models\Admin\Settings\Identity;
+use Yajra\DataTables\Facades\DataTables;
 use App\Models\Admin\Subscriber\Subscriber;
 use App\Models\Admin\Settings\ConnectionType;
-use Yajra\DataTables\Facades\DataTables;
 use App\Models\Admin\Subscriber\ChangeRequest;
 
 class ClientDashboardController extends Controller
@@ -36,23 +39,38 @@ class ClientDashboardController extends Controller
             $data = Subscriber::with('areas', 'connections', 'packages')->orderBy('id', 'desc')->get();
             if ($request->ajax()) {
                 return Datatables::of($data)
+
+                    ->addColumn('area_name', function (Subscriber $data) {
+                        $name = isset($data->areas->name) ? $data->areas->name : null;
+                        return $name;
+                    })
+
+                    ->addColumn('package_name', function (Subscriber $data) {
+                        $name = isset($data->packages->name) ? $data->packages->name : null;
+                        return $name;
+                    })
+
                     ->addColumn('status', function ($data) {
-
+                        if (Auth::user()->can('client_status')) {
                         if ($data->status == 1) {
-
-                            return '<button class="btn btn-sm btn-primary">Active</button>';
+                            return '<button class="btn btn-sm btn-primary" title="Active">Active</button>';
                         }else{
-                            return '<button class="btn btn-sm btn-danger">Inactive</button>';
+                            return '<button class="btn btn-sm btn-danger" title="Inactive">Inactive</button>';
+                        }}
+                        else{
+                            return "--";
                         }
-
                     })
 
                     ->addColumn('action', function (Subscriber $data) {
-                        return '<a href="' . route('admin.client-dashboard.show', $data->id) . ' " class="btn btn-sm btn-info"><i class="fa fa-eye"></i></a>';
+                        if (Auth::user()->can('access_to_client')) {
+                        return '<a href="' . route('admin.client-dashboard.show', $data->id) . ' " class="btn btn-sm btn-info"><i class="fa fa-eye" title="Show"></i></a>';
+                    }else{
+                            return "--";
+                        }
                     })
-
-                    ->rawColumns(['status', 'action'])
-                    ->toJson(); //--- Returning Json Data To Client Side
+                    ->rawColumns(['area_name', 'package_name','status', 'action'])
+                    ->toJson();
             }
         } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
@@ -119,7 +137,20 @@ class ClientDashboardController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // dd($request->all());
+        if($request->password != $request->confirm_password){
+            return redirect()->back()->with('error', "Passwords do not match");
+        }
+
+        if($request->password){
+            $messages = array(
+                'password' => 'Password must be be minimum 6 digit',
+            );
+
+            $this->validate($request, array(
+                'password' => 'min:6',
+            ), $messages);
+        }
+
         DB::beginTransaction();
 
         try {
@@ -127,7 +158,7 @@ class ClientDashboardController extends Controller
             $subscriber->name = $request->name;
             $subscriber->contact_no = $request->contact_no;
             $subscriber->email = $request->email;
-
+            $subscriber->password = Hash::make($request->password);
             // Store Image
             if (request()->has('image')) {
                 @unlink(public_path('img/') . $subscriber->image);
@@ -136,15 +167,13 @@ class ClientDashboardController extends Controller
                 $file->move(public_path('/img/'), $filename);
                 $subscriber->image = $filename;
             }
-
-            // $subscriber->image = $filename;
-
             $subscriber->update();
 
             $user = User::where('subscriber_id', $id)->first();
             $user->subscriber_id = $subscriber->id;
             $user->name = $request->name;
             $user->email  = $request->email;
+            $user->password = Hash::make($request->password);
             $user->update();
 
             DB::commit();
@@ -167,10 +196,11 @@ class ClientDashboardController extends Controller
         //
     }
 
-    // area change request
     public function AreaUpdate(Request $request)
     {
-        // dd($request->all());
+        if($request->area_name == $request->area_id){
+            return redirect()->back()->with('error', 'You are already in this area');
+        }
         try {
             $data = new ChangeRequest();
             $data->subscriber_id = $request->subscriber_id;
@@ -184,7 +214,6 @@ class ClientDashboardController extends Controller
         }
     }
 
-    // area request list page
     public function AreaRequest()
     {
         try {
@@ -194,21 +223,48 @@ class ClientDashboardController extends Controller
         }
     }
 
-    // area request lists
     public function AreaRequests(Request $request)
     {
         try {
             if ($request->ajax()) {
 
-                $data = ChangeRequest::with('areas', 'subscribers')->WhereNotNull('area_id')->orderBy('id', 'desc')->get();
+                if ((Auth::user()->type) == 2) {
+                    $data = ChangeRequest::with('areas', 'subscribers')->WhereNotNull('area_id')->where('subscriber_id',  Auth::user()->subscriber_id)->orderBy('id', 'desc')->get();
+                }else{
+                    $data = ChangeRequest::with('areas', 'subscribers')->WhereNotNull('area_id')->orderBy('id', 'desc')->get();
+                }
 
                 return Datatables::of($data)
 
-                    ->addColumn('status', function ($data) {
-                        $button = '<button type="submit" class="btn btn-sm btn-danger changeStatus" id="customSwitch' . $data->id . '" getId="' . $data->id . '" name="status">Pending</button>';
+                    ->addColumn('subscriber_name', function (ChangeRequest $data) {
+                        $name = isset($data->subscribers->name) ? $data->subscribers->name : null;
+                        return $name;
+                    })
+
+                    ->addColumn('subscriber_ip', function (ChangeRequest $data) {
+                        $name = isset($data->subscribers->ip_address) ? $data->subscribers->ip_address : null;
+                        return $name;
+                    })
+
+                    ->addColumn('area_name', function (ChangeRequest $data) {
+                        $name = isset($data->areas->name) ? $data->areas->name : null;
+                        return $name;
+                    })
+
+                    ->addColumn('status', function (ChangeRequest $data) {
+
+                        if ((Auth::user()->type) == 2) {
+                            if ($data->status == 1) {
+                                return '<span class="badge badge-primary" title="Approved">Approved</span>';
+                            } else {
+                                return '<span class="badge badge-danger" title="Pending">Pending</span>';
+                            }
+                        }
+
+                        $button = '<button type="submit" class="badge badge-danger btn btn-sm btn-danger changeStatus" id="customSwitch' . $data->id . '" getId="' . $data->id . '" name="status">Pending</button>';
 
                         if ($data->status == 1) {
-                            return '<button class="btn btn-sm btn-primary">Approved</button>' ;
+                            return '<span class="badge badge-primary" title="Approved">Approved</span>' ;
                         }else{
                             return $button;
                         }
@@ -219,16 +275,14 @@ class ClientDashboardController extends Controller
                         return $data->subscribers->areas->name;
                     })
 
-                    ->rawColumns(['status', 'current_area'])
-                    ->toJson(); //--- Returning Json Data To Client Side
+                    ->rawColumns(['status', 'current_area', 'subscriber_name', 'subscriber_ip', 'area_name'])
+                    ->toJson();
             }
         } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
 
-
-    // area status approved
     public function AreaStatusChange(Request $request )
     {
         $id = $request->id;
@@ -250,14 +304,11 @@ class ClientDashboardController extends Controller
 
         if ($status_update == 1) {
             return "success";
-            exit();
         } else {
             return "failed";
         }
     }
-    // end change function
 
-    // connection change request
     public function ConnectionUpdate(Request $request)
     {
         try {
@@ -273,7 +324,6 @@ class ClientDashboardController extends Controller
         }
     }
 
-    // connection request list page
     public function ConnectionRequest()
     {
         try {
@@ -283,20 +333,50 @@ class ClientDashboardController extends Controller
         }
     }
 
-    // connection request lists
     public function ConnectionRequests(Request $request)
     {
         try {
             if ($request->ajax()) {
 
-                $data = ChangeRequest::with('connections', 'subscribers')->WhereNotNull('connection_id')->orderBy('id', 'desc')->get();
+                if ((Auth::user()->type) == 2) {
+                    $data = ChangeRequest::with('connections', 'subscribers')->WhereNotNull('connection_id')->where('subscriber_id',  Auth::user()->subscriber_id)->orderBy('id', 'desc')->get();
+                }else{
+                    $data = ChangeRequest::with('connections', 'subscribers')->WhereNotNull('connection_id')->orderBy('id', 'desc')->get();
+                }
 
                 return Datatables::of($data)
-                ->addColumn('status', function ($data) {
+
+                    ->addColumn('connection_name', function (ChangeRequest $data) {
+                        $name = isset($data->connections->name) ? $data->connections->name : null;
+                        return $name;
+                    })
+
+                    ->addColumn('subscriber_name', function (ChangeRequest $data) {
+                        $name = isset($data->subscribers->name) ? $data->subscribers->name : null;
+                        return $name;
+                    })
+
+                    ->addColumn('subscriber_ip', function (ChangeRequest $data) {
+                        $name = isset($data->subscribers->ip_address) ? $data->subscribers->ip_address : null;
+                        return $name;
+                    })
+
+                ->addColumn('status', function (ChangeRequest $data) {
+
+                    if ((Auth::user()->type) == 2) {
                         if ($data->status == 1) {
-                            return '<button type="submit" class="btn btn-sm btn-primary" onclick="showStatusChangeAlert(' . $data->id . ')">Approved</button>';
+                            return '<span class="badge badge-primary" title="Approved">Approved</span>';
                         } else {
-                            return '<button type="submit" class="btn btn-sm btn-danger" onclick="showStatusChangeAlert(' . $data->id . ')">Pending</button>';
+                            return '<span class="badge badge-danger" title="Pending">Pending</span>';
+                        }
+                    }
+
+                        $button = '<button type="submit" class="badge badge-danger btn btn-sm btn-danger changeStatus" id="customSwitch' . $data->id . '" getId="' . $data->id . '" name="status">Pending</button>';
+
+                        if ($data->status == 1) {
+                            return '<span class="badge badge-primary" title="Approved">Approved</span>' ;
+                        }else{
+                            return $button;
                         }
                     })
 
@@ -304,20 +384,20 @@ class ClientDashboardController extends Controller
                         return $data->subscribers->connections->name;
                     })
 
-                    ->rawColumns(['status', 'current_connection'])
-                    ->toJson(); //--- Returning Json Data To Client Side
+                    ->rawColumns(['status', 'current_connection', 'connection_name', 'subscriber_ip', 'subscriber_name'])
+                    ->toJson();
             }
         } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
 
-
-    // package change request
     public function PackageUpdate(Request $request)
     {
-        // dd($request->all());
-        try {
+        if($request->connection_name == $request->connection_id){
+            return redirect()->back()->with('error', 'You are already using this connection & package');
+        }
+         try {
             $data = new ChangeRequest();
             $data->subscriber_id = $request->subscriber_id;
             $data->connection_id = $request->connection_id;
@@ -331,7 +411,6 @@ class ClientDashboardController extends Controller
         }
     }
 
-    // package request list page
     public function PackageRequest()
     {
         try {
@@ -341,21 +420,139 @@ class ClientDashboardController extends Controller
         }
     }
 
-    // package request lists
     public function PackageRequests(Request $request)
     {
         try {
             if ($request->ajax()) {
 
+                if ((Auth::user()->type) == 2) {
+                    $data = ChangeRequest::with('connections','packages', 'subscribers')->WhereNotNull('connection_id')->where('subscriber_id',  Auth::user()->subscriber_id)->orderBy('id', 'desc')->get();
+                }else{
+                    $data = ChangeRequest::with('connections','packages', 'subscribers')->WhereNotNull('connection_id')->orderBy('id', 'desc')->get();
+                }
+
                 $data = ChangeRequest::with('connections','packages', 'subscribers')->WhereNotNull('connection_id')->orderBy('id', 'desc')->get();
 
                 return Datatables::of($data)
 
+                    ->addColumn('connection_name', function (ChangeRequest $data) {
+                        $name = isset($data->connections->name) ? $data->connections->name : null;
+                        return $name;
+                    })
+
+                    ->addColumn('subscriber_name', function (ChangeRequest $data) {
+                        $name = isset($data->subscribers->name) ? $data->subscribers->name : null;
+                        return $name;
+                    })
+
+                    ->addColumn('subscriber_ip', function (ChangeRequest $data) {
+                        $name = isset($data->subscribers->ip_address) ? $data->subscribers->ip_address : null;
+                        return $name;
+                    })
+
+                    ->addColumn('package_name', function (ChangeRequest $data) {
+                        $name = isset($data->packages->name) ? $data->packages->name : null;
+                        return $name;
+                    })
+
+                    ->addColumn('current_connection', function (ChangeRequest $data) {
+                        return $data->connections->name;
+                    })
+
+                    ->addColumn('current_package', function (ChangeRequest $data) {
+                        return $data->packages->name;
+                    })
+
+                    ->addColumn('status', function (ChangeRequest $data) {
+                        if ((Auth::user()->type) == 2) {
+                            if ($data->status == 1) {
+                                return '<span class="badge badge-primary" title="Approved">Approved</span>';
+                            } else {
+                                return '<span class="badge badge-danger" title="Pending">Pending</span>';
+                            }
+                        }
+
+                        $button = '<button type="submit" class="badge badge-danger btn btn-sm btn-danger changeStatus" id="customSwitch' . $data->id . '" getId="' . $data->id . '" name="status">Pending</button>';
+
+                        if ($data->status == 1) {
+                            return '<span class="badge badge-primary" title="Approved">Approved</span>' ;
+                        }else{
+                            return $button;
+                        }
+                    })
+
+                    ->rawColumns(['status', 'current_connection','current_package', 'connection_name', 'subscriber_name', 'subscriber_ip', 'package_name'])
+                    ->toJson();
+            }
+        } catch (\Exception $exception) {
+            return redirect()->back()->with('error', $exception->getMessage());
+        }
+    }
+
+     public function PackageStatusChange(Request $request )
+     {
+         $id = $request->id;
+         $status_check   = ChangeRequest::findOrFail($id);
+         $status         = $status_check->status;
+         $package        = $status_check->package_id;
+         $connection     = $status_check->connection_id;
+
+         if ($status == 1) {
+             $status_update = 0;
+         } else {
+             $status_update = 1;
+         }
+
+         $data           = array();
+         $data['status'] = $status_update;
+
+         ChangeRequest::where('id', $id)->update($data);
+         Subscriber::where('id', $id)->update([
+            'connection_id' => $connection,
+            'package_id' => $package,
+        ]);
+
+         if ($status_update == 1) {
+             return "success";
+         } else {
+             return "failed";
+         }
+     }
+
+    public function BillingHistory($id)
+    {
+        try {
+            $data = Billing::with('subscribers', 'packages')->findOrFail($id);
+            $details = Billing::where('subscriber_id', $data->subscriber_id)->get();
+            return view('admin.client.billing_history', compact('data', 'details'));
+        } catch (\Exception $exception) {
+            return redirect()->back()->with('error', $exception->getMessage());
+        }
+    }
+
+    public function billingclient()
+    {
+        try {
+            $data = Subscriber::with('idcards', 'areas', 'categories', 'connections', 'packages', 'devices')->orderBy('id', 'desc')->get();
+            return view('admin.client.billing_client', compact('data'));
+        } catch (\Exception $exception) {
+            return redirect()->back()->with('error', $exception->getMessage());
+        }
+    }
+
+    public function billingclients(Request $request)
+    {
+        try {
+            if ($request->ajax()) {
+
+                $data = Billing::with('subscribers', 'packages')->where('subscriber_id',$request->subscriber_id)->orderBy('id', 'desc');
+
+                return Datatables::of($data)
                     ->addColumn('status', function ($data) {
                         if ($data->status == 1) {
-                            return '<button type="submit" class="btn btn-sm btn-primary" onclick="showStatusChangeAlert(' . $data->id . ')">Approved</button>';
+                            return 'Paid';
                         } else {
-                            return '<button type="submit" class="btn btn-sm btn-danger" onclick="showStatusChangeAlert(' . $data->id . ')">Pending</button>';
+                            return 'Un-Paid';
                         }
                     })
 
@@ -364,15 +561,14 @@ class ClientDashboardController extends Controller
                     })
 
                     ->addColumn('current_package', function ($data) {
-                        return $data->subscribers->packages->name;
+                        return $data->packages->name;
                     })
 
-                    ->rawColumns(['status', 'current_connection','current_package'])
+                    ->rawColumns(['status', 'current_connection', 'current_package'])
                     ->toJson();
             }
         } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-
 }

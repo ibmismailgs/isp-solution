@@ -17,7 +17,8 @@ class CreateBillingsTable extends Migration
             $table->id();
             $table->string('subscriber_id');
             $table->unsignedBigInteger('invoice')->index();
-            $table->tinyInteger('adjust_bill')->nullable();
+            $table->unsignedBigInteger('account_id')->index()->nullable();
+            $table->integer('adjust_bill')->nullable();
             $table->double('add_sub')->nullable();
             $table->string('billing_month');
             $table->text('description')->nullable();

@@ -16,7 +16,7 @@
                 </div>
             </div>
             <div class="page-title-actions">
-                <a href="{{ route('admin.subscriber.index') }}" type="button" class="btn btn-sm btn-dark">
+                <a title="Back Button" href="{{ route('admin.subscriber.index') }}" type="button" class="btn btn-sm btn-dark">
                     <i class="fas fa-arrow-left mr-1"></i>
                     Back
                 </a>
@@ -24,14 +24,13 @@
         </div>
     </x-slot>
 
-    <!-- Main Content -->
     <div class="container-fluid">
         <div class="page-header">
             <div class="d-inline">
                 @if (Session::has('error'))
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
                         {{Session::get('error')}}
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <button title="Close Button" type="button" class="close" data-dismiss="alert" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
@@ -76,8 +75,8 @@
 
                                 <div class="col-sm-3">
                                     <div class="form-group">
-                                        <label for="initialize_date"> Initialize Date <span class="text-red">*</span></label>
-                                        <input type="text" name="initialize_date" id="initialize_date" value="{{ $data->initialize_date }}" class="form-control datepicker @error('initialize_date') is-invalid @enderror" placeholder="Enter initialize date" required>
+                                        <label for="initialize_date"> Join Date <span class="text-red">*</span></label>
+                                        <input type="text" name="initialize_date" id="initialize_date" value="{{ Carbon\Carbon::parse($data->initialize_date)->format('d F Y') }}" class="form-control datepicker @error('initialize_date') is-invalid @enderror" placeholder="Enter initialize date" required>
 
                                         @error('initialize_date')
                                         <span class="text-danger" role="alert">
@@ -136,9 +135,7 @@
                                             <button style="margin-top: 31px" type="button" name="add" id="add" class="btn btn-success">+</button>
                                         </div>
                                     </div>
-
                                     @else
-
                                     <div class="col-sm-1">
                                     <div class="form-group">
                                         <button style="margin-top: 31px" type="button" name="row_remove" id="row_remove" class="btn btn-danger row_remove">-</button>
@@ -149,17 +146,13 @@
                                 @endforeach
 
                             <div  id="cardfield">
-
                             </div>
-
                             <div class="row">
-
                                 <div class="col-sm-4">
                                     <div class="form-group">
                                         <label for="area_id">Area <span class="text-red">*</span></label>
                                         <select name="area_id" id="area_id" class="form-control">
                                             <option value="">Select Area</option>
-
                                             @foreach ($areas as $key => $area)
                                                 <option value="{{ $area->id }}" @if ($data->area_id == $area->id) selected @endif>{{ $area->name }}</option>
                                             @endforeach
@@ -170,21 +163,6 @@
                                             <p>{{ $message }}</p>
                                         </span>
                                         @enderror
-
-                                    </div>
-                                </div>
-
-                                <div class="col-sm-4">
-                                    <div class="form-group">
-                                        <label for="address">Address<span class="text-red">*</span></label>
-                                        <textarea name="address" id="address" style="height: 38px" class="form-control" placeholder="Enter your address">{{ $data->address }}</textarea>
-
-                                        @error('address')
-                                        <span class="text-danger" role="alert">
-                                            <p>{{ $message }}</p>
-                                        </span>
-                                        @enderror
-
                                     </div>
                                 </div>
 
@@ -192,7 +170,6 @@
                                     <div class="form-group">
                                         <label for="contact_no">Contact No <span class="text-red">*</span></label>
                                         <input type="text" name="contact_no" id="contact_no" value="{{ $data->contact_no }}" class="form-control @error('contact_no') is-invalid @enderror" placeholder=" Enter your contact no.." required>
-
                                         @error('contact_no')
                                         <span class="text-danger" role="alert">
                                             <p>{{ $message }}</p>
@@ -201,9 +178,22 @@
 
                                     </div>
                                 </div>
-                            </div>
-                            <div class="row">
+                                <div class="col-sm-4">
+                                    <div class="form-group">
+                                        <label for="email"> Email <span class="text-red">*</span></label>
+                                        <input  type="email" name="email" id="email" value="{{ $data->email }}" class="form-control email @error('email') is-invalid @enderror" placeholder="Enter your email" required>
 
+                                        @error('email')
+                                        <span class="text-danger" role="alert">
+                                            <p>{{ $message }}</p>
+                                        </span>
+                                        @enderror
+
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
                                 <div class="col-sm-4">
                                     <div class="form-group">
                                         <label for="name">Client Category<span class="text-red">*</span></label>
@@ -289,20 +279,6 @@
                                     </div>
                                 </div>
 
-                                {{-- <div class="col-sm-4">
-                                    <div class="form-group">
-                                        <label for="mac_address">MAC Address <span class="text-red">*</span></label>
-                                        <input type="text" name="mac_address" id="mac_address" value="{{ $data->mac_address }}" class="form-control @error('mac_address') is-invalid @enderror" placeholder="Enter your mac address" required>
-
-                                        @error('mac_address')
-                                        <span class="text-danger" role="alert">
-                                            <p>{{ $message }}</p>
-                                        </span>
-                                        @enderror
-
-                                    </div>
-                                </div> --}}
-
                                 <div class="col-sm-4">
                                     <div class="form-group">
                                         <label for="ip_address">IP Address <span class="text-red">*</span></label>
@@ -320,11 +296,9 @@
                                  <div class="col-sm-4">
                                     <div class="form-group">
                                         <label for="status"> Status <span class="text-red">*</span></label>
-                                        <select name="status" id="status" class="form-control">
-                                            <option value="{{ $data->status }}" selected=""> @if ($data->status == 1) Active @else Inactive
-                                            @endif</option>
-                                            <option value="1">Active</option>
-                                            <option value="0">Inactive</option>
+                                         <select name="status" id="status" class="form-control">
+                                            <option value="1" {{ $data->status == 1 ? 'selected' : '' }}>Active</option>
+                                            <option value="0" {{ $data->status == 0 ? 'selected' : '' }}>Inactive</option>
                                         </select>
                                     </div>
                                 </div>
@@ -332,20 +306,6 @@
 
                            <div class="row">
                                 <div class="col-sm-4">
-                                    <div class="form-group">
-                                        <label for="email">Email <span class="text-red">*</span></label>
-                                        <input type="email" name="email" id="email" value="{{ $data->email }}" class="form-control @error('email') is-invalid @enderror" placeholder="Enter your email" required>
-
-                                        @error('email')
-                                        <span class="text-danger" role="alert">
-                                            <p>{{ $message }}</p>
-                                        </span>
-                                        @enderror
-
-                                    </div>
-                                </div>
-
-                            <div class="col-sm-4">
                                     <div class="form-group">
                                         <label for="password"> Password <span class="text-red">*</span></label>
                                         <div class="form-group">
@@ -367,20 +327,33 @@
 
                                     </div>
                                 </div>
-
-                                <div class="col-sm-4">
+                            </div>
+                                <div class="row">
+                                <div class="col-sm-6">
                                     <div class="form-group">
-                                        <label for="description"> Description </label>
-                                        <textarea style="height: 38px" name="description" id="description" class="form-control" placeholder="Describe here...">{{ $data->description }}</textarea>
+                                        <label for="address">Address<span class="text-red">*</span></label>
+                                        <textarea name="address" id="address" rows="3" class="form-control" placeholder="Enter your address">{{ $data->address }}</textarea>
+
+                                        @error('address')
+                                        <span class="text-danger" role="alert">
+                                            <p>{{ $message }}</p>
+                                        </span>
+                                        @enderror
+
                                     </div>
                                 </div>
 
-
+                                <div class="col-sm-6">
+                                    <div class="form-group">
+                                        <label for="description"> Description </label>
+                                        <textarea rows="3" name="description" id="description" class="form-control" placeholder="Describe here...">{{ $data->description }}</textarea>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="row mt-30">
                                 <div class="col-sm-12">
-                                    <button type="submit" class="btn btn-success mr-2">Update</button>
+                                    <button title="Update Button" type="submit" class="btn btn-success mr-2">Update</button>
                                 </div>
                             </div>
                         </form>
@@ -397,7 +370,7 @@
         // date picker
           $(function () {
             $('.datepicker').datepicker({
-                dateFormat: 'dd -M - yy'
+                dateFormat: 'dd MM yy'
             });
         });
 

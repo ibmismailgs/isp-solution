@@ -1,7 +1,5 @@
 <x-app-layout>
-
     @section('title', 'Create Account')
-
     <x-slot name="header">
         <div class="page-title-wrapper">
             <div class="page-title-heading">
@@ -13,7 +11,7 @@
                 </div>
             </div>
             <div class="page-title-actions">
-                <a href="{{ route('admin.account.index') }}" type="button" class="btn btn-sm btn-dark">
+                <a title="Back Button" href="{{ route('admin.account.index') }}" type="button" class="btn btn-sm btn-dark">
                     <i class="fas fa-arrow-left mr-1"></i>
                     Back
                 </a>
@@ -21,14 +19,13 @@
         </div>
     </x-slot>
 
-    <!-- Main Content -->
     <div class="container-fluid">
          <div class="page-header">
             <div class="d-inline">
                 @if (Session::has('error'))
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     {{Session::get('error')}}
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <button title="Close Button" type="button" class="close" data-dismiss="alert" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -42,7 +39,6 @@
                         <form action="{{ route('admin.account.store') }}" method="POST">
                             @csrf
                             <div class="row">
-
                                 <div class="col-sm-4">
                                     <div class="form-group">
                                         <label for="account_type_id"> Account Type <span class="text-red">*</span></label>
@@ -125,20 +121,6 @@
 
                                  <div class="col-sm-4">
                                     <div class="form-group">
-                                        <label for="branch_address"> Branch Address<span class="text-red">*</span></label>
-
-                                        <input type="text" name="branch_address" id="branch_address" value="{{ old('branch_address') }}" class="form-control @error('branch_address') is-invalid @enderror" placeholder="Enter branch address " required>
-
-                                         @error('branch_address')
-                                        <span class="text-danger" role="alert">
-                                            <p>{{ $message }}</p>
-                                        </span>
-                                        @enderror
-                                    </div>
-                                </div>
-
-                                 <div class="col-sm-4">
-                                    <div class="form-group">
                                         <label for="initial_balance"> Initial Balance <span class="text-red">*</span></label>
 
                                         <input type="number" name="initial_balance" id="initial_balance" value="{{ old('initial_balance') }}" class="form-control @error('initial_balance') is-invalid @enderror" placeholder="Enter initial blance" required>
@@ -160,19 +142,33 @@
                                         </select>
                                     </div>
                                 </div>
+                            </div>
 
-                                <div class="col-sm-4">
+                            <div class="row">
+                                <div class="col-sm-6">
                                     <div class="form-group">
-                                        <label for="description"> Description </label>
-                                        <textarea style="height: 38px;" name="description" id="description" class="form-control" placeholder="Describe here..."> {!! old('description') !!}</textarea>
+                                        <label for="branch_address"> Branch Address<span class="text-red">*</span></label>
+                                        <textarea rows="3" name="branch_address" id="branch_address" class="form-control" placeholder="Write branch here..."> {!! old('branch_address') !!}</textarea>
+
+                                         @error('branch_address')
+                                        <span class="text-danger" role="alert">
+                                            <p>{{ $message }}</p>
+                                        </span>
+                                        @enderror
                                     </div>
                                 </div>
 
+                                <div class="col-sm-6">
+                                    <div class="form-group">
+                                        <label for="description"> Description </label>
+                                        <textarea rows="3" name="description" id="description" class="form-control" placeholder="Describe here..."> {!! old('description') !!}</textarea>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="row mt-30">
                                 <div class="col-sm-12">
-                                    <button type="submit" class="btn btn-success mr-2">Create</button>
+                                    <button title="Create Button" type="submit" class="btn btn-success mr-2">Create</button>
                                 </div>
                             </div>
                         </form>
@@ -180,9 +176,5 @@
                 </div>
             </div>
         </div>
-
     </div>
-    @push('js')
-
-    @endpush
 </x-app-layout>

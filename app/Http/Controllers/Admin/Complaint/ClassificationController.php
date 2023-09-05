@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\Admin\Complaint;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Str;
-use App\Models\Admin\Complaint\Classification;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Yajra\DataTables\Facades\DataTables;
+use App\Models\Admin\Complaint\Classification;
 
 class ClassificationController extends Controller
 {
@@ -28,36 +29,50 @@ class ClassificationController extends Controller
     public function Classifications(Request $request)
     {
         try {
-            //--- Integrating This Collection Into Datatables
             if ($request->ajax()) {
 
                 $data = Classification::orderBy('id', 'desc')->get();
 
                 return Datatables::of($data)
                     ->addColumn('status', function ($data) {
-                        $button = ' <div class="custom-control custom-switch">';
-                        $button .= ' <input type="checkbox" class="custom-control-input changeStatus" id="customSwitch' . $data->id . '" getId="' . $data->id . '" name="status"';
+                        if (Auth::user()->can('classification_status')) {
+                            $button = ' <div class="custom-control custom-switch">';
+                            $button .= ' <input type="checkbox" class="custom-control-input changeStatus" id="customSwitch' . $data->id . '" getId="' . $data->id . '" name="status"';
 
-                        if ($data->status == 1) {
+                            if ($data->status == 1) {
 
-                            $button .= "checked";
+                                $button .= "checked";
+                            }
+                            $button .= '><label for="customSwitch' . $data->id . '" class="custom-control-label" for="switch1"></label></div>';
+                            return $button;
+                        } else {
+                            return "--";
                         }
-                        $button .= '><label for="customSwitch' . $data->id . '" class="custom-control-label" for="switch1"></label></div>';
-                        return $button;
                     })
 
                     ->addColumn('description', function ($data) {
-                        return Str::limit($data->description, 20);
+                        $result = isset($data->description) ? $data->description : '--' ;
+                        return Str::limit( $result, 20) ;
                     })
 
                     ->addColumn('action', function (Classification $data) {
-                        return '<a href="' . route('admin.classification.edit', $data->id) . ' " class="btn btn-sm btn-info"><i class="fa fa-edit"></i></a>
 
-                    <button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.classification.destroy', $data->id) . ' " title="Delete"><i class="fa fa-trash-alt"></i></button>';
+                        if (Auth::user()->can('classification_edit')) {
+                            $edit = ' <a href="' . route('admin.classification.edit', $data->id) . ' " class="btn btn-sm btn-info" title="Edit"><i class="fa fa-edit"></i></a> ';
+                        } else {
+                            $edit = " ";
+                        }
+
+                        if (Auth::user()->can('classification_delete')) {
+                            $delete = ' <button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.classification.destroy', $data->id) . ' " title="Delete"><i class="fa fa-trash-alt"></i></button> ';
+                        } else {
+                            $delete = "";
+                        }
+                        return $edit.$delete;
                     })
 
                     ->rawColumns(['status', 'action', 'description'])
-                    ->toJson(); //--- Returning Json Data To Client Side
+                    ->toJson();
             }
         } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
@@ -71,9 +86,9 @@ class ClassificationController extends Controller
      */
     public function create()
     {
-        try{
+        try {
             return view('admin.complaint.classification.create');
-            } catch (\Exception $exception) {
+        } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
@@ -86,7 +101,6 @@ class ClassificationController extends Controller
      */
     public function store(Request $request)
     {
-        // dd($request->all());
         $messages = array(
             'name.required' => 'Enter a classification name',
         );
@@ -117,11 +131,11 @@ class ClassificationController extends Controller
      */
     public function edit($id)
     {
-        try{
+        try {
             $complaint = Classification::findOrFail($id);
-                return view('admin.complaint.classification.edit', compact('complaint'));
-            } catch (\Exception $exception) {
-              return redirect()->back()->with('error', $exception->getMessage());
+            return view('admin.complaint.classification.edit', compact('complaint'));
+        } catch (\Exception $exception) {
+            return redirect()->back()->with('error', $exception->getMessage());
         }
     }
 
@@ -133,7 +147,7 @@ class ClassificationController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    // start update function
+  
     public function update(Request $request, $id)
     {
         $messages = array(
@@ -157,7 +171,7 @@ class ClassificationController extends Controller
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-    // end update function
+
 
     /**
      * Remove the specified resource from storage.
@@ -166,7 +180,6 @@ class ClassificationController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    // start delete function
     public function destroy($id)
     {
         try {
@@ -177,13 +190,10 @@ class ClassificationController extends Controller
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-    // end delete function
 
-    //starts status change function
     public function StatusChange(Request $request)
     {
         $id = $request->id;
-
         $status_check   = Classification::findOrFail($id);
         $status         = $status_check->status;
 
@@ -198,10 +208,8 @@ class ClassificationController extends Controller
         Classification::where('id', $id)->update($data);
         if ($status_update == 1) {
             return "success";
-            exit();
         } else {
             return "failed";
         }
     }
-    //end status change function
 }

@@ -1,6 +1,6 @@
 <x-app-layout>
     @push('css')
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="{{ asset('backend/plugins/DataTables/datatables.min.css') }}">
     <link rel="stylesheet" type="text/css" href="{{asset('app-assets/vendors/css/extensions/toastr.css')}}">
     @endpush
     @section('title', 'Balance Details')
@@ -16,10 +16,6 @@
                 </div>
             </div>
             <div class="page-title-actions">
-                {{-- <a href="{{ route('admin.account.create') }}" type="button" class="btn btn-sm btn-info">
-                    <i class="fas fa-plus mr-1"></i>
-                    Create
-                </a> --}}
             </div>
         </div>
     </x-slot>
@@ -78,7 +74,7 @@
 
     </div>
     @push('js')
-    <script src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+    <script src="{{ asset('backend/plugins/DataTables/datatables.min.js') }}"></script>
     <script src="{{ asset('app-assets/vendors/js/extensions/toastr.min.js') }}"></script>
     <script>
 
@@ -104,12 +100,7 @@
             },
 
             columns: [
-                {
-                    "render": function() {
-                        return i++;
-                    }
-                },
-
+                { data: 'DT_RowIndex', name: 'DT_RowIndex'},
                 {data: 'bank', name: 'bank'},
                 {data: 'name', name: 'name'},
                 {data: 'account_no', name: 'account_no'},
@@ -119,10 +110,66 @@
                 {data: 'current_balance', name: 'current_balance'},
 
             ],
-
+            dom: "<'row'<'col-sm-2'l><'col-sm-7 text-center'B><'col-sm-3'f>>tipr",
+                    buttons: [
+                            {
+                                extend: 'copy',
+                                className: 'btn-sm btn-info',
+                                title: 'Balance Details',
+                                header: true,
+                                footer: true,
+                                exportOptions: {
+                                    columns: ['0,1,2,3,4,5,6,7'],
+                                }
+                            },
+                            {
+                                extend: 'csv',
+                                className: 'btn-sm btn-success',
+                                title: 'Balance Details',
+                                header: true,
+                                footer: true,
+                                exportOptions: {
+                                    columns: ['0,1,2,3,4,5,6,7'],
+                                }
+                            },
+                            {
+                                extend: 'excel',
+                                className: 'btn-sm btn-dark',
+                                title: 'Balance Details',
+                                header: true,
+                                footer: true,
+                                exportOptions: {
+                                    columns: ['0,1,2,3,4,5,6,7'],
+                                }
+                            },
+                            {
+                                extend: 'pdf',
+                                className: 'btn-sm btn-primary',
+                                title: 'Balance Details',
+                                pageSize: 'A2',
+                                header: true,
+                                footer: true,
+                                exportOptions: {
+                                    columns: ['0,1,2,3,4,5,6,7'],
+                                }
+                            },
+                            {
+                                extend: 'print',
+                                className: 'btn-sm btn-danger',
+                                title: 'Balance Details',
+                                // orientation:'landscape',
+                                pageSize: 'A2',
+                                header: true,
+                                footer: false,
+                                orientation: 'landscape',
+                                exportOptions: {
+                                    columns: ['0,1,2,3,4,5,6,7'],
+                                    stripHtml: false
+                                }
+                            }
+                        ],
             });
         });
-
 
     </script>
 

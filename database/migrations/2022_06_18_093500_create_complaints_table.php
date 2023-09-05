@@ -17,11 +17,11 @@ class CreateComplaintsTable extends Migration
             $table->id();
             $table->unsignedInteger('ticket_id')->index();
             $table->unsignedInteger('classification_id')->index();
+            $table->unsignedInteger('subscriber_id')->index();
             $table->string('name');
             $table->string('email');
             $table->string('contact_no');
             $table->string('address');
-            $table->string('operator_name');
             $table->string('complain_date');
             $table->string('complain_time');
             $table->tinyInteger('piority')->default(1);

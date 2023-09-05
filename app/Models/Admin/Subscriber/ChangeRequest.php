@@ -2,6 +2,7 @@
 
 namespace App\Models\Admin\Subscriber;
 
+use App\Models\Admin\Billing\Billing;
 use App\Models\Admin\Settings\Area;
 use App\Models\Admin\Settings\Package;
 use Illuminate\Database\Eloquent\Model;
@@ -29,5 +30,9 @@ class ChangeRequest extends Model
     public function subscribers(): BelongsTo
     {
         return $this->belongsTo(Subscriber::class, 'subscriber_id', 'id')->withTrashed();
+    }
+    public function billings(): BelongsTo
+    {
+        return $this->belongsTo(Billing::class, 'billpay_id', 'id')->withTrashed();
     }
 }

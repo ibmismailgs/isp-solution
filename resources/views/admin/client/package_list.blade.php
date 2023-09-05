@@ -2,6 +2,7 @@
     @push('css')
     <link rel="stylesheet" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
     <link rel="stylesheet" type="text/css" href="{{asset('app-assets/vendors/css/extensions/toastr.css')}}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css" integrity="sha512-O03ntXoVqaGUTAeAmvQ2YSzkCvclZEcPQu1eqloPaHfJ5RuNGiS4l+3duaidD801P50J28EHyonCV06CUlTSag==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     @endpush
     @section('title', 'Request Packages')
 
@@ -15,23 +16,16 @@
                     <h4>List of Request Packages</h4>
                 </div>
             </div>
-            {{-- <div class="page-title-actions">
-                <a href="{{ route('admin.area.create') }}" type="button" class="btn btn-sm btn-info">
-                    <i class="fas fa-plus mr-1"></i>
-                    Create
-                </a>
-            </div> --}}
         </div>
     </x-slot>
 
-    <!-- Main Content -->
     <div class="container-fluid">
         <div class="page-header">
             <div class="d-inline">
                 @if (Session::has('message'))
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                     {{Session::get('message')}}
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <button title="Close Button" type="button" class="close" data-dismiss="alert" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -40,7 +34,7 @@
                 @if (Session::has('error'))
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     {{Session::get('error')}}
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <button title="Close Button" type="button" class="close" data-dismiss="alert" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -68,7 +62,7 @@
 
                         <tbody>
 
-                            </tbody>
+                        </tbody>
                         </table>
                     </div>
                 </div>
@@ -77,6 +71,9 @@
 
     </div>
     @push('js')
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js" integrity="sha512-Zq9o+E00xhhR/7vJ49mxFNJ0KQw1E1TMWkPTxrWcnpfEFDEXgUiwJHIKit93EW/XxE31HSI5GEOW06G6BF1AtA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js" integrity="sha512-AA1Bzp5Q0K1KanKKmvN/4d3IRKVlv9PYgwFPvm32nPO6QS8yH1HO7LbgB1pgiOxPtfeg5zEn2ba64MUcqJx6CA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
     <script src="{{ asset('app-assets/vendors/js/extensions/toastr.min.js') }}"></script>
     <script>
@@ -88,9 +85,7 @@
             processing: true,
             responsive: false,
             serverSide: true,
-            language: {
-                processing: '<i class="ace-icon fa fa-spinner fa-spin orange bigger-500" style="font-size:60px;margin-top:50px;"></i>'
-            },
+
             scroller: {
                 loadingIndicator: false
             },
@@ -106,12 +101,12 @@
                     return i++;
                 }
             },
-            {data: 'subscribers.name', name: 'subscribers'},
-            {data: 'subscribers.ip_address', name: 'subscribers'},
+            {data: 'subscriber_name', name: 'subscriber_name'},
+            {data: 'subscriber_ip', name: 'subscriber_ip'},
             {data: 'current_connection', name: 'current_connection'},
-            {data: 'connections.name', name: 'connections'},
+            {data: 'connection_name', name: 'connection_name'},
             {data: 'current_package', name: 'current_package'},
-            {data: 'packages.name', name: 'packages'},
+            {data: 'package_name', name: 'package_name'},
             {data: 'status', searchable: false, orderable: false},
             ],
             columnDefs: [{
@@ -121,53 +116,34 @@
         });
     });
 
-    // {--status change start here --}
-
-
-        function approve(id)
-        {
-        $.ajax({
-            //some ajax call to deal with your approve link
-            type: 'post',
-                    url: "{{ route('admin.request-area-status') }}",
-                    data: "id="+id,
-                    success: function (data) {
-                        alert('updated');
-                    }
-        });
-        }
-
-
-    $('.card').on('click', '.statusChange', function (e) {
-        e.preventDefault();
-
+        $('.card').on('click', '.changeStatus', function (e) {
+            e.preventDefault();
         var id = $(this).attr('getId');
-        if (confirm('are you sure, want to change this status?')) {
+            swal({
+                title: `Are you sure you ?`,
+                text: `Want to change this status?`,
+                buttons: true,
+                dangerMode: true,
+            }).then((statusChange) => {
+          if (statusChange) {
             $.ajax({
-                'url':"{{ route('admin.request-area-status') }}",
+                'url':"{{ route('admin.request-package-status') }}",
                 'type':'post',
                 'dataType':'text',
-
                 'data':{id:id},
-
                 success:function(data)
                 {
                     $('#example').DataTable().ajax.reload();
-
                     if(data == "success"){
-                        toastr.success('This status has been changed to Active.', { positionClass: 'toast-bottom-full-width', });
-                        return false;
-                    }else{
-                        toastr.error('This status has been changed to Inctive.', { positionClass: 'toast-bottom-full-width', });
+                        toastr.success('Request approved.', { positionClass: 'toast-bottom-full-width', });
                         return false;
                     }
                 }
             });
-        }
-
+          }
+        });
     })
 
     </script>
-
     @endpush
 </x-app-layout>

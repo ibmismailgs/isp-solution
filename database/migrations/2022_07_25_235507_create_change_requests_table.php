@@ -16,6 +16,7 @@ class CreateChangeRequestsTable extends Migration
         Schema::create('change_requests', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('subscriber_id')->index();
+            $table->unsignedBigInteger('billpay_id')->index()->nullable();
             $table->tinyInteger('area_id')->nullable();
             $table->tinyInteger('connection_id')->nullable();
             $table->tinyInteger('package_id')->nullable();

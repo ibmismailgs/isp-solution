@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Admin\Expense;
 
-use Illuminate\Support\Str;
+use App\helper\Account as HelperAccount;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\Admin\Settings\Staff;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Admin\Account\Account;
 use App\Models\Admin\Expense\Expense;
 use Yajra\DataTables\Facades\DataTables;
@@ -22,12 +24,11 @@ class ExpenseController extends Controller
      */
     public function index()
     {
-        try{
+        try {
             return view('admin.expense.index');
-         }  catch (\Exception $exception) {
+        } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
         }
-
     }
 
     /**
@@ -42,11 +43,10 @@ class ExpenseController extends Controller
             $staffs = Staff::where('status', 1)->orderby('id', 'desc')->get();
             $accounts = Account::where('status', 1)->orderby('id', 'desc')->get();
             $categories = ExpenseCategory::where('status', 1)->orderby('id', 'desc')->get();
-            return view('admin.expense.create',compact('categories', 'expense_num', 'staffs', 'accounts'));
-         } catch (\Exception $exception) {
+            return view('admin.expense.create', compact('categories', 'expense_num', 'staffs', 'accounts'));
+        } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
         }
-
     }
 
     /**
@@ -57,18 +57,16 @@ class ExpenseController extends Controller
      */
     public function store(Request $request)
     {
-        // dd($request->all());
         $messages = array(
             'date.required' => 'Enter date',
-            // 'staff_id.required' => 'Select staff name',
             'account_id.required' => 'Select account name',
         );
 
         $this->validate($request, array(
+            'account_id'=> 'required',
             'expense_number' => 'required|string|unique:expenses,expense_number',
             'image.*' => 'max:2048'
         ), $messages);
-
 
         $picture = [];
         if ($request->hasfile('image')) {
@@ -76,17 +74,22 @@ class ExpenseController extends Controller
                 $name = $image->getClientOriginalName();
                 $image->move(public_path() . '/img/', $name);
                 $picture[] = $name;
-                array_push ($picture);
+                array_push($picture);
             }
         }
 
         DB::beginTransaction();
 
         try {
+            $sum = 0;
+            $balance = HelperAccount::postBalance($request->account_id);
+            foreach ($request->amount as $amount) {
+                $sum = $amount + $sum;
+            }
+            if ($balance > $sum) {
             $data = new Expense();
             $data->expense_number = $request->expense_number;
-            $data->date = $request->date;
-            // $data->staff_id = $request->staff_id;
+            $data->date = Carbon::parse($request->date)->format('Y-m-d');
             $data->account_id = $request->account_id;
             $data->category_id = json_encode($request->category_id);
             $data->image = json_encode($picture);
@@ -95,7 +98,6 @@ class ExpenseController extends Controller
             $data->adjust_bill = $request->adjust_bill;
             $data->adjust_amount = $request->adjust_amount;
             $data->total_amount = $request->total_amount;
-            $data->status = $request->status;
             $data->description = $request->description;
             $data->save();
 
@@ -103,53 +105,61 @@ class ExpenseController extends Controller
             $account->expense_id  = $data->id;
             $account->account_id  = $data->account_id;
             $account->transaction_amount = $data->total_amount;
-            $account->transaction_date = $data->date;
-            $account->purpose = 1;
+            $account->transaction_date = Carbon::parse($data->date)->format('Y-m-d');
+            $account->transaction_type = 1;
             $account->payment_type = 1;
+            $account->purpose = 1;
+            $account->transaction_reason = 'Expense';
             $account->save();
 
             DB::commit();
 
             return redirect()->route('admin.expense.index')
-            ->with('message', 'Expense created successfully');
+                ->with('message', 'Expense created successfully');
+            } else {
+                return redirect()->back()->with('error', "You don't have enough balance.");
+            }
         } catch (\Exception $exception) {
             DB::rollback();
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
 
-    public function expenses(Request $request){
+    public function expenses(Request $request)
+    {
         try {
-            //--- Integrating This Collection Into Datatables
             if ($request->ajax()) {
 
-                $data = Expense::with('excategory','accounts')->orderBy('id', 'desc')->get();
+                $data = Expense::with('excategory', 'accounts')->orderBy('id', 'desc')->get();
 
                 return Datatables::of($data)
-                    ->addColumn('status', function ($data) {
-                        $button = ' <div class="custom-control custom-switch">';
-                        $button .= ' <input type="checkbox" class="custom-control-input changeStatus" id="customSwitch' . $data->id . '" getId="' . $data->id . '" name="status"';
-
-                        if ($data->status == 1) {
-
-                            $button .= "checked";
-                        }
-                        $button .= '><label for="customSwitch' . $data->id . '" class="custom-control-label" for="switch1"></label></div>';
-                        return $button;
-                    })
-
                     ->addColumn('action', function (Expense $data) {
-                        return '<a href="' . route('admin.expense-invoice', $data->id) . ' " class="btn btn-sm btn-secondary"><i class="fa fa-print"></i></a>
-
-                       <a href="' . route('admin.expense.show', $data->id) . ' " class="btn btn-sm btn-primary"><i class="fa fa-eye"></i></a>
-
-                       <a href="' . route('admin.expense.edit', $data->id) . ' " class="btn btn-sm btn-info"><i class="fa fa-edit"></i></a>
-
-                    <button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.expense.destroy', $data->id) . ' " title="Delete" ><i class="fa fa-trash-alt"></i></button>';
+                        if (Auth::user()->can('expense_edit')) {
+                            $invoice = '<a href="' . route('admin.expense-invoice', $data->id) . ' " class="btn btn-sm btn-secondary" title="Print"><i class="fa fa-print"></i></a>';
+                        } else {
+                            $invoice = "";
+                        }
+                        if (Auth::user()->can('expense_show')) {
+                            $show = ' <a href="' . route('admin.expense.show', $data->id) . ' " class="btn btn-sm btn-primary" title="Show"><i class="fa fa-eye"></i></a>';
+                        } else {
+                            $show = "";
+                        }
+                        if (Auth::user()->can('expense_edit')) {
+                            $edit = ' <a href="' . route('admin.expense.edit', $data->id) . ' " class="btn btn-sm btn-info" title="Edit"><i class="fa fa-edit"></i></a>';
+                        } else {
+                            $edit = " ";
+                        }
+                        if (Auth::user()->can('expense_delete')) {
+                            $delete = ' <button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.expense.destroy', $data->id) . ' " title="Delete" ><i class="fa fa-trash-alt"></i></button>';
+                        } else {
+                            $delete = " ";
+                        }
+                        return $invoice . $show . $edit . $delete;
                     })
 
-                    ->rawColumns(['status', 'action', 'description'])
-                    ->toJson(); //--- Returning Json Data To Client Side
+                    ->addIndexColumn()
+                    ->rawColumns(['action', 'description'])
+                    ->toJson();
             }
         } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
@@ -164,11 +174,11 @@ class ExpenseController extends Controller
      */
     public function show($id)
     {
-        try{
+        try {
             $categories  = ExpenseCategory::orderBy('id', 'desc')->where('status', 1)->get();
-            $data = Expense::with('excategory','accounts')->findOrFail($id);
+            $data = Expense::with('excategory', 'accounts')->findOrFail($id);
             return view('admin.expense.show', compact('data', 'categories'));
-        }   catch (\Exception $exception) {
+        } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
@@ -201,16 +211,13 @@ class ExpenseController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // dd($request->all());
         $messages = array(
             'date.required' => 'Enter date',
-            // 'staff_id.required' => 'Select staff name',
             'account_id.required' => 'Select account name',
         );
 
         $this->validate($request, array(
-            'expense_number' => 'required|string|unique:expenses,expense_number,'.$id,
-            // 'staff_id' => 'required',
+            'expense_number' => 'required|string|unique:expenses,expense_number,' . $id,
             'account_id' => 'required',
             'image.*' => 'max:2048'
         ), $messages);
@@ -229,43 +236,45 @@ class ExpenseController extends Controller
         DB::beginTransaction();
 
         try {
-            $data = Expense::findOrFail($id);
-            $data->expense_number = $request->expense_number;
-            // $data->staff_id = $request->staff_id;
-            $data->date = $request->date;
-            $data->category_id = json_encode($request->category_id);
-
-            if ($request->image == NULL) {
-                // $data->image = $image;
-            } else {
-                $data->image = json_encode($picture);
+            $sum = 0;
+            $balance = HelperAccount::postBalance($request->account_id);
+            foreach ($request->amount as $amount) {
+                $sum = $amount + $sum;
             }
+            if ($balance > $sum) {
+                $data = Expense::findOrFail($id);
+                $data->expense_number = $request->expense_number;
+                $data->date = Carbon::parse($request->date)->format('Y-m-d');
+                $data->category_id = json_encode($request->category_id);
 
-            // $data->image = json_encode($picture);
-            $data->amount = json_encode($request->amount);
-            $data->all_amount = $request->all_amount;
-            $data->adjust_bill = $request->adjust_bill;
-            $data->adjust_amount = $request->adjust_amount;
-            $data->total_amount = $request->total_amount;
-            $data->account_id = $request->account_id;
-            $data->status = $request->status;
-            $data->description = $request->description;
-            // dd($data);
-            $data->update();
+                if ($request->image != NULL) {
+                    $data->image = json_encode($picture);
+                }
 
-            $account = Transaction::where('expense_id', $id)->first();
-            $account->expense_id  = $data->id;
-            $account->account_id  = $data->account_id;
-            $account->transaction_amount = $data->total_amount;
-            $account->transaction_date = $data->date;
-            $account->purpose = 1;
-            $account->payment_type = 1;
-            $account->update();
+                $data->amount = json_encode($request->amount);
+                $data->all_amount = $request->all_amount;
+                $data->adjust_bill = $request->adjust_bill;
+                $data->adjust_amount = $request->adjust_amount;
+                $data->total_amount = $request->total_amount;
+                $data->account_id = $request->account_id;
+                $data->description = $request->description;
 
-            DB::commit();
+                $data->update();
 
-            return redirect()->route('admin.expense.index')
-            ->with('message', 'Expense updated successfully');
+                $account = Transaction::where('expense_id', $id)->first();
+                $account->expense_id  = $data->id;
+                $account->account_id  = $data->account_id;
+                $account->transaction_amount = $data->total_amount;
+                $account->transaction_date = Carbon::parse($data->date)->format('Y-m-d');
+                $account->update();
+
+                DB::commit();
+
+                return redirect()->route('admin.expense.index')
+                    ->with('message', 'Expense updated successfully');
+            } else {
+                return redirect()->back()->with('error', "You don't have enough balance.");
+            }
         } catch (\Exception $exception) {
             DB::rollback();
             return redirect()->back()->with('error', $exception->getMessage());
@@ -289,11 +298,9 @@ class ExpenseController extends Controller
         }
     }
 
-    // change status function start here
     public function ChangeStatus(Request $request)
     {
         $id = $request->id;
-
         $status_check   = Expense::findOrFail($id);
         $status         = $status_check->status;
 
@@ -308,15 +315,13 @@ class ExpenseController extends Controller
         Expense::where('id', $id)->update($data);
         if ($status_update == 1) {
             return "success";
-            exit();
         } else {
             return "failed";
         }
     }
-    // end change function
 
-    //invoice
-    public function invoice($id){
+    public function invoice($id)
+    {
         try {
             $data = Expense::with('excategory')->findOrFail($id);
             return view('admin.expense.invoice', compact('data'));

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\Settings;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Admin\Settings\Package;
 use Yajra\DataTables\Facades\DataTables;
 use App\Models\Admin\Settings\ConnectionType;
@@ -32,40 +33,54 @@ class PackageController extends Controller
      */
     //*** JSON Request
 
-    // get package all data
     public function package(Request $request)
     {
         try {
             $data = Package::with('connections')->orderBy('id', 'desc')->get();
-            //--- Integrating This Collection Into Datatables
             if ($request->ajax()) {
                 return Datatables::of($data)
                     ->addColumn('status', function ($data) {
+                        if (Auth::user()->can('package_status')) {
                         $button = ' <div class="custom-control custom-switch">';
                         $button .= ' <input type="checkbox" class="custom-control-input changeStatus" id="customSwitch' . $data->id . '" getId="' . $data->id . '" name="status"';
 
                         if ($data->status == 1) {
-
                             $button .= "checked";
                         }
                         $button .= '><label for="customSwitch' . $data->id . '" class="custom-control-label" for="switch1"></label></div>';
                         return $button;
+                    }
+                    else{
+                        return "--";
+                    }
                     })
 
                     ->addColumn('description', function ($data) {
-                        return Str::limit($data->description, 20);
+                        $result = isset($data->description) ? $data->description : '--' ;
+                        return Str::limit( $result, 20) ;
+                    })
+
+                    ->addColumn('connection_name', function ($data) {
+                        $name = isset($data->connections->name) ? $data->connections->name : null;
+                        return $name;
                     })
 
                     ->addColumn('action', function (Package $data) {
-                        return '<a href="' . route('admin.package.edit', $data->id) . ' " class="btn btn-sm btn-info"><i class="fa fa-edit"></i></a>
-
-                    <button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.package.destroy', $data->id) . ' " title="Delete"><i class="fa fa-trash-alt"></i></button>
-
-                    ';
+                        if (Auth::user()->can('package_status')) {
+                            $edit= '<a href="' . route('admin.package.edit', $data->id) . ' " class="btn btn-sm btn-info" title="Edit"><i class="fa fa-edit"></i></a> ';}
+                        else{
+                            $edit = " ";
+                        }
+                        if (Auth::user()->can('package_status')) {
+                    $delete ='<button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.package.destroy', $data->id) . ' " title="Delete"><i class="fa fa-trash-alt"></i></button>';}
+                    else {
+                        $delete =  " ";
+                    }
+                    return $edit . $delete;
                     })
 
-                    ->rawColumns(['status', 'action', 'description'])
-                    ->toJson(); //--- Returning Json Data To Client Side
+                    ->rawColumns(['status', 'action', 'description', 'connection_name'])
+                    ->toJson();
             }
         } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
@@ -87,9 +102,6 @@ class PackageController extends Controller
         }
     }
 
-
-    // start auto code generate function
-
     public function code()
     {
        try{
@@ -101,7 +113,6 @@ class PackageController extends Controller
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-    //  {{-- end auto code generate function --}}
 
     /**
      * Store a newly created resource in storage.
@@ -111,7 +122,6 @@ class PackageController extends Controller
      */
     public function store(Request $request)
     {
-        // dd($request->all());
         $messages = array(
             'connection_type_id .required' => 'Please select an connection type',
             'name.required' => 'Please enter a package name',
@@ -171,7 +181,6 @@ class PackageController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    // start update function
     public function update(Request $request, Package $package)
     {
         $messages = array(
@@ -214,7 +223,6 @@ class PackageController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    // start delete function
     public function destroy(Package $package)
     {
         try {
@@ -224,13 +232,10 @@ class PackageController extends Controller
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-    // end delete function
 
-    //starts status change function
     public function StatusChange(Request $request)
     {
         $id = $request->id;
-
         $status_check   = Package::findOrFail($id);
         $status         = $status_check->status;
 
@@ -245,10 +250,8 @@ class PackageController extends Controller
         Package::where('id', $id)->update($data);
         if ($status_update == 1) {
             return "success";
-            exit();
         } else {
             return "failed";
         }
     }
-    //end status change function
 }

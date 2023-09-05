@@ -1,9 +1,5 @@
 <x-app-layout>
-    @push('css')
-
-    @endpush
     @section('title', 'Client Details')
-
     <x-slot name="header">
         <div class="page-title-wrapper">
             <div class="page-title-heading">
@@ -15,11 +11,12 @@
                 </div>
             </div>
             <div class="page-title-actions">
-                 <a href="{{ route('admin.subscriber.index') }}" type="button" class="btn btn-sm btn-dark">
+                 <a title="Back Button" href="{{ route('admin.subscriber.index') }}" type="button" class="btn btn-sm btn-dark">
                     <i class="fas fa-arrow-left mr-1"></i>
                     Back
                 </a>
-                <a href="{{ route('admin.subscriber.create') }}" type="button" class="btn btn-sm btn-info">
+
+                <a title="Create Button" href="{{ route('admin.subscriber.create') }}" type="button" class="btn btn-sm btn-info">
                     <i class="fas fa-plus mr-1"></i>
                     Create
                 </a>
@@ -27,14 +24,13 @@
         </div>
     </x-slot>
 
-    <!-- Main Content -->
     <div class="container-fluid">
     <div class="page-header">
             <div class="d-inline">
                 @if (Session::has('error'))
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     {{Session::get('error')}}
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <button title="Close Button" type="button" class="close" data-dismiss="alert" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -96,7 +92,7 @@
 
                                 <tr>
                                     <th>Area</th>
-                                    <td>{{ $data->areas->name  }}</td>
+                                    <td>{{  $data->areas->name ?? null }}</td>
                                 </tr>
 
                                 <tr>
@@ -111,32 +107,27 @@
 
                                 <tr>
                                     <th>Client Category </th>
-                                    <td>{{ $data->categories->name }}</td>
+                                    <td>{{ $data->categories->name ?? null}}</td>
                                 </tr>
 
                                 <tr>
                                     <th>Connection Type</th>
-                                    <td>{{ $data->connections->name  }}</td>
+                                    <td>{{ $data->connections->name ?? null }}</td>
                                 </tr>
 
                                 <tr>
                                     <th>Package Type</th>
-                                    <td>{{ $data->packages->name  }}</td>
+                                    <td>{{ $data->packages->name ?? null }}</td>
                                 </tr>
 
                                 <tr>
                                     <th>Device Type</th>
-                                    <td>{{ $data->devices->name }}</td>
-                                </tr>
-
-                                <tr>
-                                    <th>MAC Address</th>
-                                    <td>{{ $data->mac_address  }}</td>
+                                    <td>{{ $data->devices->name ?? null }}</td>
                                 </tr>
 
                                 <tr>
                                     <th>IP Address</th>
-                                    <td>{{ $data->package_id  }}</td>
+                                    <td>{{ $data->ip_address  }}</td>
                                 </tr>
 
                                 <tr>
@@ -157,7 +148,7 @@
 
                                 <tr>
                                     <th>Description</th>
-                                    <td>{{ $data->description }}</td>
+                                    <td>{{ $data->description ?? '--'}}</td>
                                 </tr>
 
                                 <tr>
@@ -165,16 +156,11 @@
                                     <td><img height="50px" width="100px" src="{{asset('img/'.$data->image)}}" alt="profile picture missing">
                                     </td>
                                 </tr>
-
                             </thead>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
-    @push('js')
-
-    @endpush
 </x-app-layout>

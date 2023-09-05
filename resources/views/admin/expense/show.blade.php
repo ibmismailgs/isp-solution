@@ -1,9 +1,5 @@
 <x-app-layout>
-    @push('css')
-
-    @endpush
     @section('title', "Expense Details")
-
     <x-slot name="header" id="printableArea">
         <div class="page-title-wrapper">
             <div class="page-title-heading">
@@ -16,12 +12,12 @@
             </div>
 
             <div class="page-title-actions hidden-print">
-                 <a href="{{ route('admin.expense.index') }}" type="button" class="btn btn-sm btn-dark">
+                 <a title="Back Button" href="{{ route('admin.expense.index') }}" type="button" class="btn btn-sm btn-dark">
                     <i class="fas fa-arrow-left mr-1"></i>
                     Back
                 </a>
 
-                 <a href="#" onclick="window.print()" type="button" class="btn btn-sm btn-info">
+                 <a title="Print Button" href="#" onclick="window.print()" type="button" class="btn btn-sm btn-info">
                    <i class="fa fa-print" aria-hidden="true"></i>
                     Print
                 </a>
@@ -29,7 +25,6 @@
         </div>
     </x-slot>
 
-    <!-- Main Content -->
     <div class="container-fluid">
     	<div class="page-header">
             <div class="d-inline">
@@ -50,7 +45,6 @@
                     <div class="col-md-12">
                         <table id="example" class="table table-hover table-bordered ">
                             <thead>
-
                                 <tr>
                                     <th>Invoice No</th>
                                     <td>{{ $data->expense_number }}</td>
@@ -63,7 +57,7 @@
 
                                 <tr>
                                     <th>Account </th>
-                                    <td>{{ $data->accounts->name }}</td>
+                                    <td>{{ $data->accounts->name ?? null }}</td>
                                 </tr>
 
                                 <tr>
@@ -147,9 +141,5 @@
                 </div>
             </div>
         </div>
-
     </div>
-    @push('js')
-
-    @endpush
 </x-app-layout>

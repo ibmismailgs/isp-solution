@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Admin\Complaint;
 
 use Carbon\Carbon;
+use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\Admin\Settings\Staff;
+use Illuminate\Support\Facades\Auth;
 use Yajra\DataTables\Facades\DataTables;
 use App\Models\Admin\Complaint\Complaint;
 use App\Models\Admin\Complaint\Classification;
@@ -20,8 +23,8 @@ class ComplaintController extends Controller
     public function index()
     {
         try {
-            return view('admin.complaint.index', );
-            } catch (\Exception $exception) {
+            return view('admin.complaint.index',);
+        } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
@@ -30,31 +33,61 @@ class ComplaintController extends Controller
     public function complaints(Request $request)
     {
         try {
-            //--- Integrating This Collection Into Datatables
             if ($request->ajax()) {
 
-                $data = Complaint::with('classifications')->orderBy('id', 'desc')->get();
+                if ((Auth::user()->type) == 2) {
+                    $data = Complaint::with('classifications')->where('subscriber_id',  Auth::user()->subscriber_id)->orderBy('id', 'desc')->get();
+                }elseif ((Auth::user()->type) == 3) {
+                    $data = Complaint::with('classifications')->where('subscriber_id',   Auth::user()->subscriber_id)->orderBy('id', 'desc')->get();
+                }else{
+                    $data = Complaint::with('classifications')->orderBy('id', 'desc')->get();
+                }
 
                 return Datatables::of($data)
-
                     ->addColumn('ticket_option', function ($data) {
-                        if($data->ticket_option == 1){
-                            return 'Open';
-                        }else{
-                            return 'Close';
+                        if (Auth::user()->can('classification_status')) {
+                        $button = ' <div class="custom-control custom-switch">';
+                        $button .= ' <input type="checkbox" class="custom-control-input changeStatus" id="customSwitch' . $data->id . '" getId="' . $data->id . '" name="ticket_option"';
+
+                        if ($data->ticket_option == 1) {
+                            $button .= "checked";
                         }
+                        $button .= '><label for="customSwitch' . $data->id . '" class="custom-control-label" for="switch1"></label></div>';
+                        return $button;
+                        }elseif($data->ticket_option == 0){
+                         return 'Done';
+                        }else {
+                            return "--";
+                        }
+
+                    })
+
+                    ->addColumn('classification_name', function (Complaint $data) {
+                        $name = isset($data->classifications->name) ? $data->classifications->name : null;
+                        return $name;
                     })
 
                     ->addColumn('action', function (Complaint $data) {
-                        return '<a href="' . route('admin.complaint.show', $data->id) . ' " class="btn btn-sm btn-primary"><i class="fa fa-eye"></i></a>
 
-                        <a href="' . route('admin.complaint.edit', $data->id) . ' " class="btn btn-sm btn-info"><i class="fa fa-edit"></i></a>
+                            $show = '<a href="' . route('admin.complaint.show', $data->id) . ' " class="btn btn-sm btn-primary"><i class="fa fa-eye" title="Show"></i></a> ';
 
-                    <button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.complaint.destroy', $data->id) . ' " title="Delete" ><i class="fa fa-trash-alt"></i></button>';
+                            // $show = "";
+
+                        if (Auth::user()->can('complain_edit')) {
+                            $edit = ' <a href="' . route('admin.complaint.edit', $data->id) . ' " class="btn btn-sm btn-info" title="Edit"><i class="fa fa-edit"></i></a> ';
+                        } else {
+                            $edit = "";
+                        }
+                        if (Auth::user()->can('complain_delete')) {
+                            $delete = ' <button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.complaint.destroy', $data->id) . ' " title="Delete" ><i class="fa fa-trash-alt"></i></button> ';
+                        } else {
+                            $delete = "";
+                        }
+                        return $show . $edit . $delete;
                     })
 
-                    ->rawColumns(['action', 'ticket_option'])
-                    ->toJson(); //--- Returning Json Data To Client Side
+                    ->rawColumns(['action', 'ticket_option', 'classification_name'])
+                    ->toJson();
             }
         } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
@@ -69,11 +102,12 @@ class ComplaintController extends Controller
      */
     public function create()
     {
-        try{
-            $classifications = Classification::all();
+        try {
+            $classifications = Classification::where('status', 1)->get();
+            $user = User::with('subscribers','staffs')->where('id', Auth::user()->id)->first();
             $cid = Complaint::count();
-            return view('admin.complaint.create', compact('classifications', 'cid'));
-         } catch (\Exception $exception) {
+            return view('admin.complaint.create', compact('classifications', 'cid','user'));
+        } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
@@ -86,19 +120,16 @@ class ComplaintController extends Controller
      */
     public function store(Request $request)
     {
-        // dd($request->all());
         $messages = array(
             'name.required' => 'Enter complaint name',
             'classification_id.required' => 'Select ticket type',
             'address.required' => 'Enter your address',
             'contact_no.required' => 'Enter your contact number',
             'email.required' => 'Enter your email address',
-            'operator_name.required' => 'Enter operator name',
         );
 
         $this->validate($request, array(
             'ticket_id' => 'required|string|unique:complaints,ticket_id',
-
         ), $messages);
 
         try {
@@ -112,10 +143,9 @@ class ComplaintController extends Controller
             $data->contact_no = $request->contact_no;
             $data->email = $request->email;
             $data->piority = $request->piority;
-            $data->ticket_option = $request->ticket_option;
-            $data->operator_name = $request->operator_name;
+            $data->ticket_option = 1;
+            $data->subscriber_id = $request->subscriber_id;
             $data->description = $request->description;
-            // dd($data);
             $data->save();
 
             return redirect()->route('admin.complaint.index')
@@ -124,7 +154,6 @@ class ComplaintController extends Controller
             return redirect()->back()->withErrors('error', $exception->getMessage());
         }
     }
-
 
     public function show($id)
     {
@@ -144,11 +173,11 @@ class ComplaintController extends Controller
      */
     public function edit($id)
     {
-        try{
+        try {
             $data = Complaint::findOrFail($id);
             $classifications = Classification::where('status', 1)->orderBy('id', 'desc')->get();
             return view('admin.complaint.edit', compact('data', 'classifications'));
-         } catch (\Exception $exception) {
+        } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
@@ -161,7 +190,6 @@ class ComplaintController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    // start update function
     public function update(Request $request, $id)
     {
         $messages = array(
@@ -170,7 +198,6 @@ class ComplaintController extends Controller
             'address.required' => 'Enter your address',
             'contact_no.required' => 'Enter your contact number',
             'email.required' => 'Enter your email address',
-            'operator_name.required' => 'Enter operator name',
         );
 
         $this->validate($request, array(
@@ -188,8 +215,8 @@ class ComplaintController extends Controller
             $data->contact_no = $request->contact_no;
             $data->email = $request->email;
             $data->piority = $request->piority;
-            $data->ticket_option = $request->ticket_option;
-            $data->operator_name = $request->operator_name;
+            $data->ticket_option = 1;
+            $data->subscriber_id = $request->subscriber_id;
             $data->description = $request->description;
             $data->update();
 
@@ -199,7 +226,6 @@ class ComplaintController extends Controller
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-    // end update function
 
     /**
      * Remove the specified resource from storage.
@@ -208,7 +234,6 @@ class ComplaintController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    // start delete function
     public function destroy($id)
     {
         try {
@@ -219,16 +244,12 @@ class ComplaintController extends Controller
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-    // end delete function
 
-    //starts status change function
     public function StatusChange(Request $request)
     {
         $id = $request->id;
-
         $status_check   = Complaint::findOrFail($id);
-        $status         = $status_check->status;
-
+        $status         = $status_check->ticket_option;
         if ($status == 1) {
             $status_update = 0;
         } else {
@@ -236,14 +257,12 @@ class ComplaintController extends Controller
         }
 
         $data           = array();
-        $data['status'] = $status_update;
+        $data['ticket_option'] = $status_update;
         Complaint::where('id', $id)->update($data);
         if ($status_update == 1) {
             return "success";
-            exit();
         } else {
             return "failed";
         }
     }
-    //end status change function
 }

@@ -3,7 +3,6 @@
     @push('css')
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.1/themes/base/jquery-ui.css">
     @endpush
-
     @section('title', 'Create Staff')
 
     <x-slot name="header">
@@ -17,7 +16,7 @@
                 </div>
             </div>
             <div class="page-title-actions">
-                <a href="{{ route('admin.staff.index') }}" type="button" class="btn btn-sm btn-dark">
+                <a title="Back Button" href="{{ route('admin.staff.index') }}" type="button" class="btn btn-sm btn-dark">
                     <i class="fas fa-arrow-left mr-1"></i>
                     Back
                 </a>
@@ -25,14 +24,13 @@
         </div>
     </x-slot>
 
-    <!-- Main Content -->
     <div class="container-fluid">
         <div class="page-header">
             <div class="d-inline">
                 @if (Session::has('error'))
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
                         {{Session::get('error')}}
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <button title="CLose Button" type="button" class="close" data-dismiss="alert" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
@@ -89,28 +87,29 @@
                                     </div>
                                 </div>
 
-
-                                 <div class="col-sm-4">
+                                <div class="col-sm-4">
                                     <div class="form-group">
-                                        <label for="gender">Gender<span class="text-red">*</span></label>
-                                        <br>
+                                        <label for="gender">Select Gender <span class="text-red">*</span></label>
+                                       <select id="gender" name="gender" class="form-control @error('gender') is-invalid @enderror" required="">
+                                            <option value="">Select Gender</option>
+                                            <option value="1">Male</option>
+                                            <option value="2">Female</option>
+                                            <option value="3">Other</option>
+                                        </select>
 
-                                        <input type="radio"  name="gender" id="gender" value="1" required> Male &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-
-                                        <input type="radio" name="gender" id="gender" value="2" required> Female
-
-                                         @error('gender')
+                                        @error('gender')
                                         <span class="text-danger" role="alert">
                                             <p>{{ $message }}</p>
                                         </span>
                                         @enderror
+
                                     </div>
                                 </div>
 
                                 <div class="col-sm-4">
                                     <div class="form-group">
                                         <label for="image"> Profile Picture </label>
-                                        <input type="file" name="image" id="image" value="{{ old('image') }}" class="form-control @error('image') is-invalid @enderror" placeholder="Enter your profile picture" required>
+                                        <input type="file" name="image" id="image" value="{{ old('image') }}" class="form-control @error('image') is-invalid @enderror" placeholder="Enter your profile picture" >
 
                                         @error('image')
                                         <span class="text-danger" role="alert">
@@ -135,7 +134,6 @@
                                     </div>
                                 </div>
 
-
                                 <div class="col-sm-4">
                                     <div class="form-group">
                                         <label for="designation"> Designation <span class="text-red">*</span></label>
@@ -153,7 +151,7 @@
                                 <div class="col-sm-4">
                                     <div class="form-group">
                                         <label for="salary"> Salary <span class="text-red">*</span></label>
-                                        <input name="salary" type="text" id="salary" value="{{ old('salary') }}" class="form-control salary @error('salary') is-invalid @enderror" placeholder="Enter salary" required>
+                                        <input name="salary" type="number" id="salary" value="{{ old('salary') }}" class="form-control salary @error('salary') is-invalid @enderror" placeholder="Enter salary" required>
 
                                         @error('salary')
                                         <span class="text-danger" role="alert">
@@ -164,14 +162,35 @@
                                     </div>
                                 </div>
 
-
-
                                 <div class="col-sm-4">
                                     <div class="form-group">
                                         <label for="email"> Email <span class="text-red">*</span></label>
-                                        <input  type="email" name="email" id="email" value="" class="form-control email @error('email') is-invalid @enderror" placeholder="Enter ypur email" required>
+                                        <input  type="email" name="email" id="email" value="" class="form-control email @error('email') is-invalid @enderror" placeholder="Enter your email" required>
 
                                         @error('email')
+                                        <span class="text-danger" role="alert">
+                                            <p>{{ $message }}</p>
+                                        </span>
+                                        @enderror
+
+                                    </div>
+                                </div>
+
+                                 <div class="col-sm-4">
+                                    <div class="form-group">
+                                        <label for="password"> Password <span class="text-red">*</span></label>
+                                        <div class="form-group">
+                                            <div class="input-group">
+                                                <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required="required" autocomplete="off">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text">
+                                                        <span id="showPassword" class="fa fa-eye"></span>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        @error('password')
                                         <span class="text-danger" role="alert">
                                             <p>{{ $message }}</p>
                                         </span>
@@ -190,10 +209,10 @@
                                     </div>
                                 </div>
 
-                                 <div class="col-sm-4">
+                                <div class="col-sm-6">
                                     <div class="form-group">
                                         <label for="address">Address <span class="text-red">*</span></label>
-                                       <textarea name="address" id="" style="height: 38px" class="form-control" placeholder="address here..." required>{!! old('address') !!}</textarea>
+                                       <textarea name="address" class="form-control" rows="3" placeholder="Write your address..." required>{!! old('address') !!}</textarea>
 
                                          @error('address')
                                         <span class="text-danger" role="alert">
@@ -203,10 +222,10 @@
                                     </div>
                                 </div>
 
-                                <div class="col-sm-4">
+                                <div class="col-sm-6">
                                     <div class="form-group">
                                         <label for="description"> Description </label>
-                                        <textarea name="description" style="height: 38px" id="" class="form-control" placeholder="Describe here...">{!! old('description') !!}</textarea>
+                                        <textarea name="description" rows="3" class="form-control" placeholder="Describe here...">{!! old('description') !!}</textarea>
                                     </div>
                                 </div>
 
@@ -214,7 +233,7 @@
 
                             <div class="row mt-30">
                                 <div class="col-sm-12">
-                                    <button type="submit" class="btn btn-success mr-2">Create</button>
+                                    <button title="Create Button" type="submit" class="btn btn-success mr-2">Create</button>
                                 </div>
                             </div>
 
@@ -230,6 +249,14 @@
          <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 
         <script>
+
+            // password show on click
+          showPassword.addEventListener('click', function (e) {
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            this.classList.toggle('fa-eye-slash');
+        });
+
              // date picker
             $(function () {
                 $('.datepicker').datepicker({

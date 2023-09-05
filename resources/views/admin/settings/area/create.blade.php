@@ -1,7 +1,5 @@
 <x-app-layout>
-
     @section('title', 'Create Area')
-
     <x-slot name="header">
         <div class="page-title-wrapper">
             <div class="page-title-heading">
@@ -13,7 +11,7 @@
                 </div>
             </div>
             <div class="page-title-actions">
-                <a href="{{ route('admin.area.index') }}" type="button" class="btn btn-sm btn-dark">
+                <a title="Back Button" href="{{ route('admin.area.index') }}" type="button" class="btn btn-sm btn-dark">
                     <i class="fas fa-arrow-left mr-1"></i>
                     Back
                 </a>
@@ -21,20 +19,20 @@
         </div>
     </x-slot>
 
-    <!-- Main Content -->
     <div class="container-fluid">
         <div class="page-header">
             <div class="d-inline">
                 @if (Session::has('error'))
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     {{Session::get('error')}}
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <button title="Close Button" type="button" class="close" data-dismiss="alert" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 @endif
             </div>
         </div>
+
         <div class="card">
             <div class="card-body">
                 <div class="row">
@@ -42,7 +40,6 @@
                         <form action="{{ route('admin.area.store') }}" method="POST">
                             @csrf
                             <div class="row">
-
                                 <div class="col-sm-4">
                                     <div class="form-group">
                                         <label for="name">Area Name<span class="text-red">*</span></label>
@@ -87,14 +84,15 @@
                                 <div class="col-sm-12">
                                     <div class="form-group">
                                         <label for="description"> Description </label>
-                                        <textarea name="description" id="description" class="form-control" placeholder="Describe here...">{!! old('description') !!}</textarea>
+                                        <textarea name="description"
+                                        rows="3" id="description" class="form-control" placeholder="Describe here...">{!! old('description') !!}</textarea>
                                     </div>
                                 </div>
 
                             </div>
                             <div class="row mt-30">
                                 <div class="col-sm-12">
-                                    <button type="submit" class="btn btn-success mr-2">Create</button>
+                                    <button title="Create Button" type="submit" class="btn btn-success mr-2">Create</button>
                                 </div>
                             </div>
                         </form>

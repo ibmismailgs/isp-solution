@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\Report;
 use Illuminate\Http\Request;
 use App\Models\Admin\Settings\Area;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Admin\Settings\Device;
 use App\Models\Admin\Settings\Package;
 use Yajra\DataTables\Facades\DataTables;
@@ -15,7 +16,6 @@ use App\Models\Admin\Subscriber\SubscriberCategory;
 
 class ReportController extends Controller
 {
-    //client index page
     public function subscriber(){
         try {
             return view('admin.report.subscribers');
@@ -24,7 +24,6 @@ class ReportController extends Controller
         }
     }
 
-    //client list
     public function subscribers(Request $request){
         try {
             if ($request->ajax()) {
@@ -32,11 +31,23 @@ class ReportController extends Controller
                 $data = Subscriber::with('connections', 'packages')->where('status', $request->subscriber_id)->orderBy('id', 'desc')->get();
 
                 return Datatables::of($data)
-                    ->addColumn('action', function (Subscriber $data) {
-                        return '<a href="' . route('admin.subscriber.show', $data->id) . ' " class="btn btn-sm btn-primary"><i class="fa fa-eye"></i></a>';
+
+                    ->addColumn('package_amount', function (Subscriber $data) {
+                        $name = isset($data->packages->amount) ? $data->packages->amount : null;
+                        return $name;
                     })
 
-                    ->rawColumns(['action'])
+                    ->addColumn('package_name', function (Subscriber $data) {
+                        $name = isset($data->packages->name) ? $data->packages->name : null;
+                        return $name;
+                    })
+
+                    ->addColumn('action', function (Subscriber $data) {
+                        return '<a href="' . route('admin.subscriber.show', $data->id) . ' " class="btn btn-sm btn-primary" title="Show"><i class="fa fa-eye"></i></a>';
+                    })
+
+                    ->addIndexColumn()
+                    ->rawColumns(['action', 'package_name', 'package_amount'])
                     ->toJson();
             }
 
@@ -45,7 +56,6 @@ class ReportController extends Controller
         }
     }
 
-    //packages index pade
     public function package()
     {
         try {
@@ -56,7 +66,6 @@ class ReportController extends Controller
         }
     }
 
-    //client list by packages
     public function packages(Request $request)
     {
         try {
@@ -65,11 +74,18 @@ class ReportController extends Controller
                 $data = Subscriber::with('connections', 'packages')->where('package_id', $request->package_id)->orderBy('id', 'desc')->get();
 
                 return Datatables::of($data)
-                    ->addColumn('action', function (Subscriber $data) {
-                        return '<a href="' . route('admin.subscriber.show', $data->id) . ' " class="btn btn-sm btn-primary"><i class="fa fa-eye"></i></a>';
+
+                    ->addColumn('package_amount', function (Subscriber $data) {
+                        $name = isset($data->packages->amount) ? $data->packages->amount : null;
+                        return $name;
                     })
 
-                    ->rawColumns(['action'])
+                    ->addColumn('action', function (Subscriber $data) {
+                        return '<a href="' . route('admin.subscriber.show', $data->id) . ' " class="btn btn-sm btn-primary" title="Show"><i class="fa fa-eye"></i></a>';
+                    })
+
+                    ->addIndexColumn()
+                    ->rawColumns(['action','package_amount'])
                     ->toJson();
             }
         } catch (\Exception $exception) {
@@ -77,7 +93,6 @@ class ReportController extends Controller
         }
     }
 
-    //connection index pade
     public function connection()
     {
         try {
@@ -88,7 +103,6 @@ class ReportController extends Controller
         }
     }
 
-    //client list by connection
     public function connections(Request $request)
     {
         try {
@@ -97,11 +111,18 @@ class ReportController extends Controller
                 $data = Subscriber::with('connections', 'packages')->where('connection_id', $request->connection_id)->orderBy('id', 'desc')->get();
 
                 return Datatables::of($data)
-                    ->addColumn('action', function (Subscriber $data) {
-                        return '<a href="' . route('admin.subscriber.show', $data->id) . ' " class="btn btn-sm btn-primary"><i class="fa fa-eye"></i></a>';
+                    ->addColumn('package_amount', function (Subscriber $data) {
+                        $name = isset($data->packages->amount) ? $data->packages->amount : null;
+                        return $name;
                     })
 
-                    ->rawColumns(['action'])
+                    ->addColumn('action', function (Subscriber $data) {
+                        return '<a href="' . route('admin.subscriber.show', $data->id) . ' " class="btn btn-sm btn-primary"
+                        title="Show"><i class="fa fa-eye"></i></a>';
+                    })
+
+                    ->addIndexColumn()
+                    ->rawColumns(['action', 'package_amount'])
                     ->toJson();
             }
         } catch (\Exception $exception) {
@@ -109,7 +130,6 @@ class ReportController extends Controller
         }
     }
 
-    //area index pade
     public function area()
     {
         try {
@@ -120,7 +140,6 @@ class ReportController extends Controller
         }
     }
 
-    //client list by area
     public function areas(Request $request)
     {
         try {
@@ -129,11 +148,18 @@ class ReportController extends Controller
                 $data = Subscriber::with('connections', 'packages')->where('area_id', $request->area_id)->orderBy('id', 'desc')->get();
 
                 return Datatables::of($data)
-                    ->addColumn('action', function (Subscriber $data) {
-                        return '<a href="' . route('admin.subscriber.show', $data->id) . ' " class="btn btn-sm btn-primary"><i class="fa fa-eye"></i></a>';
+                    ->addColumn('package_amount', function (Subscriber $data) {
+                        $name = isset($data->packages->amount) ? $data->packages->amount : null;
+                        return $name;
                     })
 
-                    ->rawColumns(['action'])
+                    ->addColumn('action', function (Subscriber $data) {
+                        return '<a href="' . route('admin.subscriber.show', $data->id) . ' " class="btn btn-sm btn-primary"
+                        title="Show"><i class="fa fa-eye"></i></a>';
+                    })
+
+                    ->addIndexColumn()
+                    ->rawColumns(['package_amount','action'])
                     ->toJson();
             }
         } catch (\Exception $exception) {
@@ -141,7 +167,6 @@ class ReportController extends Controller
         }
     }
 
-    //area index pade
     public function device()
     {
         try {
@@ -152,20 +177,26 @@ class ReportController extends Controller
         }
     }
 
-    //client list by area
     public function devices(Request $request)
     {
         try {
             if ($request->ajax()) {
 
-                $data = Subscriber::with('devices','packages')->where('device_id', $request->device_id)->orderBy('id', 'desc')->get();
+                $data = Subscriber::with('devices','packages')->where('device_id', $request->device_id)->get();
 
                 return Datatables::of($data)
-                    ->addColumn('action', function (Subscriber $data) {
-                        return '<a href="' . route('admin.subscriber.show', $data->id) . ' " class="btn btn-sm btn-primary"><i class="fa fa-eye"></i></a>';
+                    ->addColumn('package_amount', function (Subscriber $data) {
+                        $name = isset($data->packages->amount) ? $data->packages->amount : null;
+                        return $name;
                     })
 
-                    ->rawColumns(['action'])
+                    ->addColumn('action', function (Subscriber $data) {
+                        return '<a href="' . route('admin.subscriber.show', $data->id) . ' " class="btn btn-sm btn-primary"
+                        title="Show"><i class="fa fa-eye"></i></a>';
+                    })
+
+                    ->addIndexColumn()
+                    ->rawColumns(['package_amount','action'])
                     ->toJson();
             }
         } catch (\Exception $exception) {
@@ -173,7 +204,6 @@ class ReportController extends Controller
         }
     }
 
-    //category index pade
     public function category()
     {
         try {
@@ -184,7 +214,6 @@ class ReportController extends Controller
         }
     }
 
-    //client list by client categories
     public function categories(Request $request)
     {
         try {
@@ -193,11 +222,22 @@ class ReportController extends Controller
                 $data = Subscriber::with('categories','connections', 'packages')->where('category_id', $request->category_id)->orderBy('id', 'desc')->get();
 
                 return Datatables::of($data)
-                    ->addColumn('action', function (Subscriber $data) {
-                        return '<a href="' . route('admin.subscriber.show', $data->id) . ' " class="btn btn-sm btn-primary"><i class="fa fa-eye"></i></a>';
+                    ->addColumn('package_amount', function (Subscriber $data) {
+                        $name = isset($data->packages->amount) ? $data->packages->amount : null;
+                        return $name;
                     })
 
-                    ->rawColumns(['action'])
+                    ->addColumn('action', function (Subscriber $data) {
+                        if (Auth::user()->can('access_to_report')) {
+                        return '<a href="' . route('admin.subscriber.show', $data->id) . ' " class="btn btn-sm btn-primary"
+                        title="Show"><i class="fa fa-eye"></i></a>';}
+                        else{
+                            return "--";
+                        }
+                    })
+
+                    ->addIndexColumn()
+                    ->rawColumns(['package_amount','action'])
                     ->toJson();
             }
         } catch (\Exception $exception) {

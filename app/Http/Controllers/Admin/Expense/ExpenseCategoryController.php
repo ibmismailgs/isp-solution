@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\Admin\Expense;
 
-use App\Http\Controllers\Controller;
-use App\Models\Admin\Expense\ExpenseCategory;
-use Illuminate\Http\Request;
-use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Yajra\DataTables\Facades\DataTables;
+use App\Models\Admin\Expense\ExpenseCategory;
 
 class ExpenseCategoryController extends Controller
 {
@@ -44,13 +45,22 @@ class ExpenseCategoryController extends Controller
             })
 
             ->addColumn('description', function ($data) {
-                return Str::limit($data->description, 20);
+                $result = isset($data->description) ? $data->description : '--' ;
+                return Str::limit( $result, 20) ;
             })
 
             ->addColumn('action', function (ExpenseCategory $data) {
-                return '<a href="' . route('admin.expense-category.edit', $data->id) . ' " class="btn btn-sm btn-info"><i class="fas fa-edit"></i></a>
-
-                 <button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.expense-category.destroy', $data->id) . ' " title="Delete"><i class="fas fa-trash-alt"></i></button>';
+                if (Auth::user()->can('expense_edit')) {
+                $edit =  '<a href="' . route('admin.expense-category.edit', $data->id) . ' " class="btn btn-sm btn-info" title="Edit"><i class="fas fa-edit" ></i></a> ';
+                }else{
+                    $edit = "";
+                }
+                if (Auth::user()->can('expense_delete')) {
+                $delete = ' <button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.expense-category.destroy', $data->id) . ' " title="Delete"><i class="fas fa-trash-alt"></i></button>';}
+                else{
+                    $delete="";
+                }
+                return $edit.$delete;
             })
 
             ->rawColumns(['status', 'action', 'description'])
@@ -83,7 +93,6 @@ class ExpenseCategoryController extends Controller
      */
     public function store(Request $request)
     {
-        // dd($request->all());
         $messages = array(
             'name.required' => 'Please enter name',
         );
@@ -94,7 +103,6 @@ class ExpenseCategoryController extends Controller
 
         try {
             $data = new ExpenseCategory();
-
             $data->name = $request->name;
             $data->status = $request->status;
             $data->description = $request->description;
@@ -123,7 +131,6 @@ class ExpenseCategoryController extends Controller
         }
     }
 
-
     /**
      * Update the specified resource in storage.
      *
@@ -132,7 +139,6 @@ class ExpenseCategoryController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    // start update function
     public function update(Request $request, $id)
     {
         $messages = array(
@@ -165,7 +171,6 @@ class ExpenseCategoryController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    // start delete function
     public function destroy($id)
     {
         try {
@@ -176,13 +181,10 @@ class ExpenseCategoryController extends Controller
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-    // end delete function
 
-    // change status function start here
     public function StatusChange(Request $request)
     {
         $id = $request->id;
-
         $status_check   = ExpenseCategory::findOrFail($id);
         $status         = $status_check->status;
 
@@ -197,10 +199,8 @@ class ExpenseCategoryController extends Controller
         ExpenseCategory::where('id', $id)->update($data);
         if ($status_update == 1) {
             return "success";
-            exit();
         } else {
             return "failed";
         }
     }
-    // end change function
 }

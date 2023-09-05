@@ -15,20 +15,19 @@ class CreateExpensesTable extends Migration
     {
         Schema::create('expenses', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('expense_id')->index();
+            $table->string('expense_id')->index();
             $table->unsignedInteger('account_id')->index();
             $table->string('expense_number');
             $table->string('name');
             $table->string('date');
             $table->json('category_id');
-            $table->json('image');
+            $table->json('image')->nullable();
             $table->string('contact_no');
             $table->string('adjust_bill')->nullable();
             $table->string('adjust_amount')->nullable();
             $table->string('total_amount');
             $table->string('amount');
             $table->string('all_amount');
-            $table->boolean('status')->default(1);
             $table->text('description')->nullable();
             $table->tinyInteger('created_by')->nullable();
             $table->tinyInteger('updated_by')->nullable();

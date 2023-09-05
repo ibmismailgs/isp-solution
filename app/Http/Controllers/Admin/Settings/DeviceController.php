@@ -6,11 +6,11 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Models\Admin\Settings\Device;
+use Illuminate\Support\Facades\Auth;
 use Yajra\DataTables\Facades\DataTables;
 
 class DeviceController extends Controller
 {
-
     /**
      * Display a listing of the resource.
      *
@@ -30,35 +30,44 @@ class DeviceController extends Controller
     {
         try {
             $data = Device::orderBy('id', 'desc')->get();
-            //--- Integrating This Collection Into Datatables
             if ($request->ajax()) {
                 return Datatables::of($data)
-                ->addColumn('status', function ($data) {
-                    $button = ' <div class="custom-control custom-switch">';
-                    $button .= ' <input type="checkbox" class="custom-control-input changeStatus" id="customSwitch' . $data->id . '" getId="' . $data->id . '" name="status"';
+                    ->addColumn('status', function ($data) {
+                        if (Auth::user()->can('device_status')) {
+                            $button = ' <div class="custom-control custom-switch">';
+                            $button .= ' <input type="checkbox" class="custom-control-input changeStatus" id="customSwitch' . $data->id . '" getId="' . $data->id . '" name="status"';
 
-                    if ($data->status == 1) {
-
-                        $button .= "checked";
-                    }
-                    $button .= '><label for="customSwitch' . $data->id . '" class="custom-control-label" for="switch1"></label></div>';
-                    return $button;
-                })
+                            if ($data->status == 1) {
+                                $button .= "checked";
+                            }
+                            $button .= '><label for="customSwitch' . $data->id . '" class="custom-control-label" for="switch1"></label></div>';
+                            return $button;
+                        } else {
+                            return "--";
+                        }
+                    })
 
                     ->addColumn('description', function ($data) {
-                        return Str::limit($data->description, 20);
+                        $result = isset($data->description) ? $data->description : '--' ;
+                        return Str::limit( $result, 20) ;
                     })
 
                     ->addColumn('action', function (Device $data) {
-                        return '<a href="' . route('admin.device.edit', $data->id) . ' " class="btn btn-sm btn-info"><i class="fa fa-edit"></i></a>
-
-                    <button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.device.destroy', $data->id) . ' " title="Delete"><i class="fa fa-trash-alt"></i></button>
-
-                    ';
+                        if (Auth::user()->can('connection_delete')) {
+                            $edit = '<a href="' . route('admin.device.edit', $data->id) . ' " class="btn btn-sm btn-info" title="Edit"><i class="fa fa-edit"></i></a> ';
+                        } else {
+                            $edit = " ";
+                        }
+                        if (Auth::user()->can('connection_delete')) {
+                            $delete = ' <button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.device.destroy', $data->id) . ' " title="Delete"><i class="fa fa-trash-alt"></i></button>';
+                        } else {
+                            $delete = " ";
+                        }
+                        return $edit.$delete;
                     })
 
                     ->rawColumns(['status', 'action', 'description'])
-                    ->toJson(); //--- Returning Json Data To Client Side
+                    ->toJson();
             }
         } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
@@ -72,9 +81,9 @@ class DeviceController extends Controller
      */
     public function create()
     {
-        try{
-        return view('admin.settings.device.create');
-          } catch (\Exception $exception) {
+        try {
+            return view('admin.settings.device.create');
+        } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
@@ -87,7 +96,6 @@ class DeviceController extends Controller
      */
     public function store(Request $request)
     {
-        // dd($request->all());
         $messages = array(
             'name.required' => 'Please enter a device name',
         );
@@ -98,7 +106,6 @@ class DeviceController extends Controller
 
         try {
             $data = new Device();
-
             $data->name = $request->name;
             $data->status = $request->status;
             $data->description = $request->description;
@@ -119,9 +126,9 @@ class DeviceController extends Controller
      */
     public function edit(Device $device)
     {
-        try{
+        try {
             return view('admin.settings.device.edit', compact('device'));
-          } catch (\Exception $exception) {
+        } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
@@ -136,7 +143,6 @@ class DeviceController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    // start update function
     public function update(Request $request, Device $device)
     {
         $messages = array(
@@ -159,7 +165,6 @@ class DeviceController extends Controller
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-    // end update function
 
     /**
      * Remove the specified resource from storage.
@@ -168,7 +173,6 @@ class DeviceController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    // start delete function
     public function destroy(Device $device)
     {
         try {
@@ -178,13 +182,10 @@ class DeviceController extends Controller
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-    // end delete function
 
-    //starts status change function
     public function StatusChange(Request $request)
     {
         $id = $request->id;
-
         $status_check   = Device::findOrFail($id);
         $status         = $status_check->status;
 
@@ -199,10 +200,8 @@ class DeviceController extends Controller
         Device::where('id', $id)->update($data);
         if ($status_update == 1) {
             return "success";
-            exit();
         } else {
             return "failed";
         }
     }
-    //end status change function
 }

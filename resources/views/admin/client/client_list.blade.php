@@ -3,7 +3,7 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
     <link rel="stylesheet" type="text/css" href="{{asset('app-assets/vendors/css/extensions/toastr.css')}}">
     @endpush
-    @section('title', 'Client')
+    @section('title', 'Client List')
 
     <x-slot name="header">
         <div class="page-title-wrapper">
@@ -15,23 +15,16 @@
                     <h4>List of Clients</h4>
                 </div>
             </div>
-            {{-- <div class="page-title-actions">
-                <a href="{{ route('admin.subscriber.create') }}" type="button" class="btn btn-sm btn-info">
-                    <i class="fas fa-plus mr-1"></i>
-                    Create
-                </a>
-            </div> --}}
         </div>
     </x-slot>
 
-    <!-- Main Content -->
     <div class="container-fluid">
     	<div class="page-header">
             <div class="d-inline">
                 @if (Session::has('message'))
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
                         {{Session::get('message')}}
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <button title="Close Button" type="button" class="close" data-dismiss="alert" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
@@ -40,7 +33,7 @@
                  @if (Session::has('error'))
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     {{Session::get('error')}}
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <button title="Close Button" type="button" class="close" data-dismiss="alert" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -93,9 +86,7 @@
             processing: true,
             responsive: false,
             serverSide: true,
-            language: {
-              processing: '<i class="ace-icon fa fa-spinner fa-spin orange bigger-500" style="font-size:60px;margin-top:50px;"></i>'
-            },
+
             scroller: {
                 loadingIndicator: false
             },
@@ -113,8 +104,8 @@
                 },
                 {data: 'subscriber_id', name: 'subscriber_id'},
                 {data: 'name', name: 'name'},
-                {data: 'areas.name', name: 'areas'},
-                {data: 'packages.name', name: 'packages'},
+                {data: 'area_name', name: 'area_name'},
+                {data: 'package_name', name: 'package_name'},
                 {data: 'ip_address', name: 'ip_address'},
                 {data: 'status', searchable: false, orderable: false},
                 {data: 'action', searchable: false, orderable: false}

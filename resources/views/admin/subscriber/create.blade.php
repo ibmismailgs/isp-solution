@@ -2,9 +2,7 @@
     @push('css')
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.1/themes/base/jquery-ui.css">
     @endpush
-
     @section('title', 'Create Client')
-
     <x-slot name="header">
         <div class="page-title-wrapper">
             <div class="page-title-heading">
@@ -16,7 +14,7 @@
                 </div>
             </div>
             <div class="page-title-actions">
-                <a href="{{ route('admin.subscriber.index') }}" type="button" class="btn btn-sm btn-dark">
+                <a title="Back Button" href="{{ route('admin.subscriber.index') }}" type="button" class="btn btn-sm btn-dark">
                     <i class="fas fa-arrow-left mr-1"></i>
                     Back
                 </a>
@@ -24,14 +22,13 @@
         </div>
     </x-slot>
 
-    <!-- Main Content -->
     <div class="container-fluid">
         <div class="page-header">
             <div class="d-inline">
                 @if (Session::has('error'))
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     {{Session::get('error')}}
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <button title="Close Button" type="button" class="close" data-dismiss="alert" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -75,7 +72,7 @@
 
                                 <div class="col-sm-3">
                                     <div class="form-group">
-                                        <label for="initialize_date"> Initialize Date <span class="text-red">*</span></label>
+                                        <label for="initialize_date"> Join Date <span class="text-red">*</span></label>
                                         <input type="text" name="initialize_date" id="initialize_date" value="{{ old('initialize_date') }}" class="form-control datepicker @error('initialize_date') is-invalid @enderror" placeholder="Enter initialize date" required>
 
                                         @error('initialize_date')
@@ -130,11 +127,9 @@
 
                             <div  id="cardfield">
 
-
                             </div>
 
                             <div class="row">
-
                                 <div class="col-sm-4">
                                     <div class="form-group">
                                         <label for="area_id">Area <span class="text-red">*</span></label>
@@ -153,21 +148,6 @@
 
                                     </div>
                                 </div>
-
-                                <div class="col-sm-4">
-                                    <div class="form-group">
-                                        <label for="address">Address<span class="text-red">*</span></label>
-                                        <textarea name="address" id="address" style="height: 38px" class="form-control" placeholder="Enter your address">{!! old('address') !!}</textarea>
-
-                                        @error('address')
-                                        <span class="text-danger" role="alert">
-                                            <p>{{ $message }}</p>
-                                        </span>
-                                        @enderror
-
-                                    </div>
-                                </div>
-
                                 <div class="col-sm-4">
                                     <div class="form-group">
                                         <label for="contact_no">Contact No <span class="text-red">*</span></label>
@@ -181,8 +161,6 @@
 
                                     </div>
                                 </div>
-                            </div>
-                            <div class="row">
 
                                 <div class="col-sm-4">
                                     <div class="form-group">
@@ -204,6 +182,8 @@
 
                                     </div>
                                 </div>
+                            </div>
+                            <div class="row">
 
                                 <div class="col-sm-4">
                                     <div class="form-group">
@@ -243,9 +223,6 @@
                                     </div>
                                 </div>
 
-                            </div>
-
-                            <div class="row">
                                 <div class="col-sm-4">
                                     <div class="form-group">
                                         <label for="device_id">Device Type <span class="text-red">*</span></label>
@@ -265,20 +242,6 @@
 
                                     </div>
                                 </div>
-
-                                {{-- <div class="col-sm-4">
-                                    <div class="form-group">
-                                        <label for="mac_address">MAC Address <span class="text-red">*</span></label>
-                                        <input type="text" name="mac_address" id="mac_address" value="{{ old('mac_address') }}" class="form-control @error('mac_address') is-invalid @enderror" placeholder="Enter your mac address" required>
-
-                                        @error('mac_address')
-                                        <span class="text-danger" role="alert">
-                                            <p>{{ $message }}</p>
-                                        </span>
-                                        @enderror
-
-                                    </div>
-                                </div> --}}
 
                                 <div class="col-sm-4">
                                     <div class="form-group">
@@ -303,10 +266,6 @@
                                         </select>
                                     </div>
                                 </div>
-
-                            </div>
-
-                           <div class="row">
                                 <div class="col-sm-4">
                                     <div class="form-group">
                                         <label for="email">Email <span class="text-red">*</span></label>
@@ -320,6 +279,10 @@
 
                                     </div>
                                 </div>
+
+                            </div>
+
+                           <div class="row">
 
                             <div class="col-sm-4">
                                     <div class="form-group">
@@ -343,20 +306,34 @@
 
                                     </div>
                                 </div>
+                                </div>
 
-                                <div class="col-sm-4">
+                                  <div class="row">
+                                    <div class="col-sm-6">
                                     <div class="form-group">
-                                        <label for="description"> Description </label>
-                                        <textarea style="height: 38px" name="description" id="description" class="form-control" placeholder="Describe here...">{!! old('description') !!}</textarea>
+                                        <label for="address">Address<span class="text-red">*</span></label>
+                                        <textarea rows="3" name="address" id="address" class="form-control" placeholder="Enter your address">{!! old('address') !!}</textarea>
+
+                                        @error('address')
+                                        <span class="text-danger" role="alert">
+                                            <p>{{ $message }}</p>
+                                        </span>
+                                        @enderror
+
                                     </div>
                                 </div>
 
-
+                                <div class="col-sm-6">
+                                    <div class="form-group">
+                                        <label for="description"> Description </label>
+                                        <textarea rows="3" name="description" id="description" class="form-control" placeholder="Describe here...">{!! old('description') !!}</textarea>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="row mt-30">
                                 <div class="col-sm-12">
-                                    <button type="submit" class="btn btn-success mr-2">Create</button>
+                                    <button title="Create Button" type="submit" class="btn btn-success mr-2">Create</button>
                                 </div>
                             </div>
                         </form>
@@ -437,10 +414,7 @@
                     });
                 });
                 });
-
         });
     </script>
-
     @endpush
-
 </x-app-layout>

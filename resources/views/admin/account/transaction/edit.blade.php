@@ -1,8 +1,7 @@
 <x-app-layout>
-      @push('css')
+    @push('css')
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.1/themes/base/jquery-ui.css">
     @endpush
-
     @section('title', 'Edit Deposit/Withdraw')
 
     <x-slot name="header">
@@ -16,7 +15,7 @@
                 </div>
             </div>
             <div class="page-title-actions">
-                <a href="{{ route('admin.transactions.index') }}" type="button" class="btn btn-sm btn-dark">
+                <a title="Back Button" href="{{ route('admin.transactions.index') }}" type="button" class="btn btn-sm btn-dark">
                     <i class="fas fa-arrow-left mr-1"></i>
                     Back
                 </a>
@@ -48,38 +47,6 @@
                             <div class="row">
 
                                 <div class="col-sm-4">
-                                <div class="form-group">
-                                    <label for="status"> Account <span class="text-red">*</span></label>
-                                        <select name="account_id" id="account_id" class="form-control">
-                                            <option value="">Select Account</option>
-                                            @foreach ($accounts as $key=> $account)
-                                            <option value="{{ $account->id }}" @if($account->id == $data->account_id) @endif selected>{{ $account->name }}</option>
-                                            @endforeach
-
-                                        </select>
-                                          @error('account_id')
-                                        <span class="text-danger" role="alert">
-                                            <p>{{ $message }}</p>
-                                        </span>
-                                        @enderror
-                                </div>
-                             </div>
-
-                                <div class="col-sm-4">
-                                    <div class="form-group">
-                                        <label for="transaction_amount">Amount <span class="text-red">*</span></label>
-                                        <input type="number" name="transaction_amount" id="transaction_amount" value="{{ $data->transaction_amount }}" class="form-control @error('transaction_amount') is-invalid @enderror" placeholder="Enter transaction amount" required>
-
-                                        @error('transaction_amount')
-                                        <span class="text-danger" role="alert">
-                                            <p>{{ $message }}</p>
-                                        </span>
-                                        @enderror
-
-                                    </div>
-                                </div>
-
-                                  <div class="col-sm-4">
                                     <div class="form-group">
                                         <label for="transaction_date"> Date <span class="text-red">*</span></label>
                                         <input type="text" name="transaction_date" id="transaction_date" value="{{  $data->transaction_date }}" class="form-control datepicker @error('transaction_date') is-invalid @enderror" placeholder="Enter transaction date" required>
@@ -94,39 +61,51 @@
                                 </div>
 
                                 <div class="col-sm-4">
+                                <div class="form-group">
+                                    <label for="status"> Account <span class="text-red">*</span><span
+                                        class="text-info" id="balance" style="display: none">
+                                    </span></label><input type="hidden" value="" id="amount_balance">
+                                        <select name="account_id" onchange="getBalance()" id="account_id" class="form-control">
+                                            <option value="">Select Account</option>
+                                            @foreach ($accounts as $key=> $account)
+                                            <option value="{{ $account->id }}" @if($account->id == $data->account_id) selected @endif >{{ $account->name }}</option>
+                                            @endforeach
+
+                                        </select>
+                                          @error('account_id')
+                                        <span class="text-danger" role="alert">
+                                            <p>{{ $message }}</p>
+                                        </span>
+                                        @enderror
+                                </div>
+                             </div>
+
+                                <div class="col-sm-4">
+                                    <div class="form-group">
+                                        <label for="transaction_amount">Amount <span class="text-red">*</span></label>
+                                        <input type="number"
+                                        oninput="CheckAmount(this)"name="transaction_amount" id="transaction_amount" value="{{ $data->transaction_amount }}" class="form-control @error('transaction_amount') is-invalid @enderror" placeholder="Enter transaction amount" required>
+
+                                        @error('transaction_amount')
+                                        <span class="text-danger" role="alert">
+                                            <p>{{ $message }}</p>
+                                        </span>
+                                        @enderror
+
+                                    </div>
+                                </div>
+
+
+                                <div class="col-sm-4">
 
                                     <div class="form-group">
-                                        <label for="purpose">Purpose<span class="text-red">*</span></label>
-                                        <select name="purpose" id="purpose" class="form-control @error('purpose') is-invalid @enderror">
-                                            <option value="">Select</option>
-                                             <option value="{{ $data->purpose }}" selected="">
-                                                @if ($data->purpose == 1)
-                                                        Withdraw
-                                                    @elseif($data->purpose == 2)
-                                                        Deposit
-                                                    @elseif($data->purpose == 3)
-                                                        Received Payment
-                                                    @elseif($data->purpose == 4)
-                                                        Given Payment
-                                                 @endif
-                                            </option>
+                                        <label for="transaction_type">Purpose<span class="text-red">*</span></label>
 
-                                            <option value="1" @if( old('purpose') == 1 )
-                                            selected
-                                                @endif> Expense </option>
-                                            <option value="2" @if( old('purpose') == 2 )
-                                            selected
-                                                @endif> Given Payment  </option>
-                                            <option value="3" @if( old('purpose') == 3 )
-                                            selected
-                                                @endif> Received Payment </option>
-                                            <option value="4" @if( old('purpose') == 4 )
-                                            selected
-                                                @endif> Deposit </option>
+                                        <select name="transaction_type" id="transaction_type" class="form-control @error('transaction_type') is-invalid @enderror">
+                                            <option value="1" {{ $data->transaction_type == 1 ? 'selected' : '' }}>Withdraw</option>
+                                            <option value="2" {{ $data->transaction_type == 2 ? 'selected' : '' }}>Deposit</option>
                                         </select>
-                                        <div class="help-block with-errors"></div>
-
-                                        @error('purpose')
+                                        @error('transaction_type')
                                         <span class="invalid-feedback" role="alert">
                                                 <strong>{{ $message }}</strong>
                                             </span>
@@ -137,18 +116,10 @@
                                 <div class="col-sm-4">
                                     <div class="form-group">
                                         <label for="payment_type"> Payment Method <span class="text-red">*</span></label>
+
                                         <select name="payment_type" id="payment_type" class="form-control">
-                                            <option value=""> Select</option>
-                                            <option value="{{ $data->payment_type }}" selected>
-                                                @if ($data->payment_type == 1)
-                                                        Cash
-                                                    @elseif($data->payment_type == 2)
-                                                        Cheque
-                                                 @endif
-                                            </option>
-                                            <option value="1" @if( old('payment_type') == 1 )
-                                            selected @endif> Cash </option>
-                                            <option value="2" @if (old('payment_type') == "2") selected @endif> Cheque </option>
+                                            <option value="1" {{ $data->payment_type == 1 ? 'selected' : '' }}>Cash</option>
+                                            <option value="2" {{ $data->payment_type == 2 ? 'selected' : '' }}>Cheque</option>
                                         </select>
 
                                          @error('payment_type')
@@ -173,28 +144,10 @@
                                         @enderror
                                     </div>
                                 </div>
-
-                                 <div class="col-sm-4">
-                                    <div class="form-group">
-                                        <label for="status"> Status <span class="text-red">*</span></label>
-                                        <select name="status" id="status" class="form-control">
-                                            <option value="{{ $data->status }}" selected="">
-                                                @if ($data->status == 1)
-                                                        Active
-                                                    @else
-                                                        Inactive
-                                                 @endif
-                                            </option>
-                                            <option value="1">Active</option>
-                                            <option value="0">Inactive</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="col-sm-4">
+                                <div class="col-sm-12">
                                     <div class="form-group">
                                         <label for="description"> Description </label>
-                                        <textarea style="height: 38px;" name="description" id="description" class="form-control" placeholder="Describe here..."> {{ $data->description }}</textarea>
+                                        <textarea rows="3" name="description" id="description" class="form-control" placeholder="Describe here..."> {{ $data->description }}</textarea>
                                     </div>
                                 </div>
 
@@ -202,7 +155,7 @@
 
                             <div class="row mt-30">
                                 <div class="col-sm-12">
-                                    <button type="submit" class="btn btn-success mr-2">Update</button>
+                                    <button title="Update Button" type="submit" class="btn btn-success mr-2">Update</button>
                                 </div>
                             </div>
                         </form>
@@ -214,6 +167,7 @@
     </div>
     @push('js')
     <script src="https://code.jquery.com/ui/1.13.1/jquery-ui.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
 
     <script>
 
@@ -222,15 +176,24 @@
             dateFormat: 'dd MM yy'
         });
 
-        // $("#cheque_number").hide();
+        $(document).ready(function() {
+             var accountId = $('#account_id').val();
 
-        // $('#payment_type').on('change', function() {
-        //     if($(this).val() == 2){
-        //         $("#cheque_number").show(500);
-        //     }else{
-        //         $("#cheque_number").hide(500);
-        //     }
-        // }).change();
+                if (accountId !== null) {
+                    var url = '{{ route("admin.account-balance",":id") }}';
+                        $.ajax({
+                            type: "GET",
+                            url: url.replace(':id', accountId),
+                            success: function (resp) {
+                            $('#balance').show();
+                            document.getElementById('balance').innerHTML = '( ' + resp + ' )';
+                            $('#amount_balance').val(resp);
+                            }, // success end
+                            error: function (error) {
+                            }
+                        })
+                }
+            });
 
          $("#payment_type").change(function(){
             $('select').find("option:selected").each(function(){
@@ -243,14 +206,55 @@
             });
              }).change();
 
-            //  $('#payment_type').on('change', function() {
-            //     if($(this).val() == 2){
-            //         $("#cheque_number").show(500);
-            //     }else{
-            //         $("#cheque_number").hide(500);
-            //     }
-            // });
-        // }).change();
+             function getBalance() {
+                var accountId = $('#account_id').val();
+                if (accountId !== null) {
+                    var url = '{{ route('admin.account-balance', ':id') }}';
+                    $.ajax({
+                        type: "GET",
+                        url: url.replace(':id', accountId),
+                        success: function(resp) {
+                            //  console.log(resp);
+                            $('#balance').show();
+                            document.getElementById('balance').innerHTML = '( ' + resp + ' )';
+                            $('#amount_balance').val(resp);
+                        }, // success end
+                        error: function(error) {
+                            // location.reload();
+                        }
+                    })
+                }
+
+            }
+            //  get balance End
+            function CheckAmount(amount) {
+                if ($('#account_id').val()) {
+                    if ($('#transaction_type').val()) {
+                        var amount = amount.value;
+                        var amountBalance = $('#amount_balance').val();
+                        if ($('#transaction_type').val() == 1) {
+                            if (parseFloat(amountBalance) < parseFloat(amount)) {
+                                swal({
+                                    title: `Alert?`,
+                                    text: "You don't have enough balance.",
+                                    buttons: true,
+                                    dangerMode: true,
+                                }).then((willDelete) => {
+                                    if (willDelete) {
+                                        $('#transaction_amount').val(0);
+                                    }
+                                });
+                            }
+                        }
+                    } else {
+                        $('#transaction_amount').val(0);
+                        alert('please select Purpose*')
+                    }
+                } else {
+                    $('#transaction_amount').val(0);
+                    alert('please select Bank Account first')
+                }
+            }
 
     </script>
 

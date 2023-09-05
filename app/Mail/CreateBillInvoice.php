@@ -32,11 +32,8 @@ class CreateBillInvoice extends Mailable
      */
     public function build()
     {
-        // return $this->subject('Your bill invoice')->view('admin.billing.email');
+        return $this->subject('Internet Bill')
+                    ->view('admin.billing.email');
 
-        return $this->view('admin.billing.email')->with([
-            // 'user' => $this->user,
-            'details' => $this->details,
-        ]);
     }
 }

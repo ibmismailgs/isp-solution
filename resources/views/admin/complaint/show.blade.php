@@ -1,9 +1,5 @@
 <x-app-layout>
-    @push('css')
-
-    @endpush
     @section('title', 'Complaint Details')
-
     <x-slot name="header">
         <div class="page-title-wrapper">
             <div class="page-title-heading">
@@ -15,19 +11,18 @@
                 </div>
             </div>
             <div class="page-title-actions">
-                 <a href="{{ route('admin.complaint.index') }}" type="button" class="btn btn-sm btn-dark">
+                 <a title="Back Button" href="{{ route('admin.complaint.index') }}" type="button" class="btn btn-sm btn-dark">
                     <i class="fas fa-arrow-left mr-1"></i>
                     Back
                 </a>
-                <a href="{{ route('admin.complaint.create') }}" type="button" class="btn btn-sm btn-info">
-                    <i class="fas fa-plus mr-1"></i>
-                    Create
-                </a>
+                    <a title="Create Button" href="{{ route('admin.complaint.create') }}" type="button" class="btn btn-sm btn-info">
+                        <i class="fas fa-plus mr-1"></i>
+                        Create
+                    </a>
             </div>
         </div>
     </x-slot>
 
-    <!-- Main Content -->
     <div class="container-fluid">
     	<div class="page-header">
             <div class="d-inline">
@@ -56,7 +51,7 @@
 
                                 <tr>
                                     <th>Ticket Type</th>
-                                    <td>{{ $data->classifications->name }}</td>
+                                    <td>{{ $data->classifications->name ?? null }}</td>
                                 </tr>
 
                                 <tr>
@@ -115,7 +110,7 @@
                                     <th>Email</th>
                                     <td>{{ $data->operator_name }}</td>
                                 </tr>
-                                
+
                                 <tr>
                                     <th>Description</th>
                                     <td>{{ $data->description }}</td>
@@ -127,9 +122,5 @@
                 </div>
             </div>
         </div>
-
     </div>
-    @push('js')
-
-    @endpush
 </x-app-layout>

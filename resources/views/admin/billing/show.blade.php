@@ -1,7 +1,4 @@
 <x-app-layout>
-    @push('css')
-
-    @endpush
     @section('title', "Subscriber's Bill Details")
 
     <x-slot name="header" id="printableArea">
@@ -16,12 +13,12 @@
             </div>
 
             <div class="page-title-actions hidden-print">
-                 <a href="{{ route('admin.bill.index') }}" type="button" class="btn btn-sm btn-dark">
+                 <a title="Back Button" href="{{ route('admin.bill.index') }}" type="button" class="btn btn-sm btn-dark">
                     <i class="fas fa-arrow-left mr-1"></i>
                     Back
                 </a>
 
-                 <a href="#" onclick="window.print()" type="button" class="btn btn-sm btn-info">
+                 <a title="Print Button" href="#" onclick="window.print()" type="button" class="btn btn-sm btn-info">
                    <i class="fa fa-print" aria-hidden="true"></i>
                     Print
                 </a>
@@ -29,14 +26,13 @@
         </div>
     </x-slot>
 
-    <!-- Main Content -->
     <div class="container-fluid">
     	  <div class="page-header">
             <div class="d-inline">
                 @if (Session::has('error'))
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     {{Session::get('error')}}
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <button title="Close Button" type="button" class="close" data-dismiss="alert" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -50,7 +46,6 @@
                     <div class="col-md-12">
                         <table id="example" class="table table-hover table-bordered ">
                             <thead>
-
                                 <tr>
                                     <th>Subscriber ID</th>
                                     <td>{{ $data->subscribers->subscriber_id }}</td>
@@ -118,6 +113,8 @@
                                             Addition
                                         @elseif($data->add_sub == 2)
                                             Substraction
+                                            @else
+                                            --
                                         @endif
                                     </td>
                                 </tr>
@@ -129,7 +126,7 @@
 
                                 <tr>
                                     <th>Adjust Bill</th>
-                                    <td>{{ $data->adjust_bill }}</td>
+                                    <td>{{ $data->adjust_bill ?? '--' }}</td>
                                 </tr>
 
                                 <tr>
@@ -138,13 +135,8 @@
                                 </tr>
 
                                 <tr>
-                                    <th>MAC Address</th>
-                                    <td>{{ $data->subscribers->mac_address }}</td>
-                                </tr>
-
-                                <tr>
                                     <th>IP Address</th>
-                                    <td>{{ $data->subscribers->package_id }}</td>
+                                    <td>{{ $data->subscribers->ip_address }}</td>
                                 </tr>
 
                                 <tr>
@@ -164,18 +156,13 @@
                                 </tr>
                                 <tr>
                                     <th>Description</th>
-                                    <td>{{ $data->subscribers->description }}</td>
+                                    <td>{{ $data->subscribers->description ?? '--' }}</td>
                                 </tr>
-
                             </thead>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
-    @push('js')
-
-    @endpush
 </x-app-layout>

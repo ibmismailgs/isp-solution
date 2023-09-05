@@ -4,6 +4,10 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        <?php
+            $generalSettings = App\Models\Admin\Settings\GeneralSetting::first();
+        ?>
+        <link title="Favicon" rel="icon" href="@isset($generalSettings) {{ asset('img/' . $generalSettings->favicon) }} @endisset" />
         <title> @yield('title') </title>
 
         <!-- Google Font: Source Sans Pro -->
@@ -48,6 +52,7 @@
                     </div>
                 </section>
             </div>
+            @include('layouts.dashboard.partials.footer')
         </div>
 
         <!-- jQuery -->

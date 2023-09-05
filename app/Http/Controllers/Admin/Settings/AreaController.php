@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Admin\Settings\Area;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Yajra\DataTables\Facades\DataTables;
 
 class AreaController extends Controller
@@ -16,6 +17,12 @@ class AreaController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
+
+    // public function __construct()
+    // {
+    //     $this->middleware('can:access_to_area')->except('create');
+    // }
+
     public function index()
     {
         try {
@@ -29,36 +36,50 @@ class AreaController extends Controller
     public function area(Request $request)
     {
         try {
-            //--- Integrating This Collection Into Datatables
             if ($request->ajax()) {
 
                 $data = Area::orderBy('id', 'desc')->get();
-
                 return Datatables::of($data)
-                ->addColumn('status', function ($data) {
-                    $button = ' <div class="custom-control custom-switch">';
-                    $button .= ' <input type="checkbox" class="custom-control-input changeStatus" id="customSwitch' . $data->id . '" getId="' . $data->id . '" name="status"';
+                    ->addColumn('status', function ($data) {
+                        if (Auth::user()->can('area_status')) {
+                        $button = ' <div class="custom-control custom-switch">';
+                        $button .= ' <input type="checkbox" class="custom-control-input changeStatus" id="customSwitch' . $data->id . '" getId="' . $data->id . '" name="status"';
 
-                    if ($data->status == 1) {
-                        $button .= "checked";
-                    }
-                    
-                    $button .= '><label for="customSwitch' . $data->id . '" class="custom-control-label" for="switch1"></label></div>';
-                    return $button;
-                })
+                        if ($data->status == 1) {
+                            $button .= "checked";
+                        }
+
+                        $button .= '><label for="customSwitch' . $data->id . '" class="custom-control-label" for="switch1"></label></div>';
+                        return $button;
+                        }
+                    })
 
                     ->addColumn('description', function ($data) {
-                        return Str::limit($data->description, 20);
+                        $result = isset($data->description) ? $data->description : '--' ;
+                        return Str::limit( $result, 20) ;
                     })
 
                     ->addColumn('action', function (Area $data) {
-                        return '<a href="' . route('admin.area.edit', $data->id) . ' " class="btn btn-sm btn-info"><i class="fa fa-edit"></i></a>
+                        if (Auth::user()->can('area_edit')) {
+                           $edit='<a href="' . route('admin.area.edit', $data->id) . ' " class="btn btn-sm btn-info" title="Edit"><i class="fa fa-edit"></i></a> ';
 
-                    <button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.area.destroy', $data->id) . ' " title="Delete"><i class="fa fa-trash-alt"></i></button>';
+                        }
+                        else{
+                            $edit = " ";
+                        }
+                        if (Auth::user()->can('area_delete')) {
+                            $delete = ' <button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.area.destroy', $data->id) . ' " title="Delete"><i class="fa fa-trash-alt"></i></button>';
+
+                        }
+                        else{
+                            $delete = " ";
+                        }
+                        return $edit.$delete;
+
                     })
 
                     ->rawColumns(['status', 'action', 'description'])
-                    ->toJson(); //--- Returning Json Data To Client Side
+                    ->toJson();
             }
         } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
@@ -88,7 +109,6 @@ class AreaController extends Controller
      */
     public function store(Request $request)
     {
-        // dd($request->all());
         $messages = array(
             'name.required' => 'Please enter an area name',
             'code.required' => 'Please enter an area code',
@@ -130,8 +150,6 @@ class AreaController extends Controller
         }
     }
 
-    // start auto code generate function
-
     public function code()
     {
         try {
@@ -143,7 +161,6 @@ class AreaController extends Controller
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-    //  {{-- end auto code generate function --}}
 
     /**
      * Update the specified resource in storage.
@@ -153,7 +170,6 @@ class AreaController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    // start update function
     public function update(Request $request, Area $area)
     {
         $messages = array(
@@ -179,7 +195,6 @@ class AreaController extends Controller
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-    // end update function
 
     /**
      * Remove the specified resource from storage.
@@ -188,7 +203,6 @@ class AreaController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    // start delete function
     public function destroy(Area $area)
     {
         try {
@@ -198,13 +212,10 @@ class AreaController extends Controller
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-    // end delete function
 
-    //starts status change function
     public function StatusChange(Request $request)
     {
         $id = $request->id;
-
         $status_check   = Area::findOrFail($id);
         $status         = $status_check->status;
 
@@ -219,10 +230,8 @@ class AreaController extends Controller
         Area::where('id', $id)->update($data);
         if ($status_update == 1) {
             return "success";
-            exit();
         } else {
             return "failed";
         }
     }
-    //end status change function
 }

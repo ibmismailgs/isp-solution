@@ -1,7 +1,5 @@
 <x-app-layout>
-
     @section('title', 'Create Account Type')
-
     <x-slot name="header">
         <div class="page-title-wrapper">
             <div class="page-title-heading">
@@ -13,7 +11,7 @@
                 </div>
             </div>
             <div class="page-title-actions">
-                <a href="{{ route('admin.account-type.index') }}" type="button" class="btn btn-sm btn-dark">
+                <a title="Back Button" href="{{ route('admin.account-type.index') }}" type="button" class="btn btn-sm btn-dark">
                     <i class="fas fa-arrow-left mr-1"></i>
                     Back
                 </a>
@@ -21,7 +19,6 @@
         </div>
     </x-slot>
 
-    <!-- Main Content -->
     <div class="container-fluid">
          <div class="page-header">
             <div class="d-inline">
@@ -42,7 +39,6 @@
                         <form action="{{ route('admin.account-type.store') }}" method="POST">
                             @csrf
                             <div class="row">
-
                                 <div class="col-sm-6">
                                     <div class="form-group">
                                         <label for="name">Account Type<span class="text-red">*</span></label>
@@ -69,13 +65,14 @@
                                 <div class="col-sm-12">
                                     <div class="form-group">
                                         <label for="description"> Description </label>
-                                        <textarea name="description" id="description" class="form-control" placeholder="Describe here...">{!! old('description') !!}</textarea>
+                                        <textarea name="description"
+                                        rows="3" id="description" class="form-control" placeholder="Describe here...">{!! old('description') !!}</textarea>
                                     </div>
                                 </div>
                             </div>
                             <div class="row mt-30">
                                 <div class="col-sm-12">
-                                    <button type="submit" class="btn btn-success mr-2">Create</button>
+                                    <button title="Submit Button" type="submit" class="btn btn-success mr-2">Create</button>
                                 </div>
                             </div>
                         </form>
@@ -83,9 +80,5 @@
                 </div>
             </div>
         </div>
-
     </div>
-    @push('js')
-
-    @endpush
 </x-app-layout>

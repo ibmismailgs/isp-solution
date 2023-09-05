@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\Settings;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Admin\Settings\ConnectionType;
+use Illuminate\Support\Facades\Auth;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Str;
 
@@ -28,37 +29,46 @@ class ConnectionTypeController extends Controller
     public function connection(Request $request)
     {
         try {
-
             $data = ConnectionType::orderBy('id', 'desc')->get();
-            //--- Integrating This Collection Into Datatables
             if ($request->ajax()) {
                 return Datatables::of($data)
                     ->addColumn('status', function ($data) {
-                        $button = ' <div class="custom-control custom-switch">';
-                        $button .= ' <input type="checkbox" class="custom-control-input changeStatus" id="customSwitch' . $data->id . '" getId="' . $data->id . '" name="status"';
+                        if (Auth::user()->can('connection_status')) {
+                            $button = ' <div class="custom-control custom-switch">';
+                            $button .= ' <input type="checkbox" class="custom-control-input changeStatus" id="customSwitch' . $data->id . '" getId="' . $data->id . '" name="status"';
 
-                        if ($data->status == 1) {
+                            if ($data->status == 1) {
 
-                            $button .= "checked";
+                                $button .= "checked";
+                            }
+                            $button .= '><label for="customSwitch' . $data->id . '" class="custom-control-label" for="switch1"></label></div>';
+                            return $button;
+                        } else {
+                            return " -- ";
                         }
-                        $button .= '><label for="customSwitch' . $data->id . '" class="custom-control-label" for="switch1"></label></div>';
-                        return $button;
                     })
 
                     ->addColumn('description', function ($data) {
-                        return Str::limit($data->description, 20);
+                        $result = isset($data->description) ? $data->description : '--' ;
+                        return Str::limit( $result, 20) ;
                     })
 
                     ->addColumn('action', function (ConnectionType $data) {
-                        return '<a href="' . route('admin.connection.edit', $data->id) . ' " class="btn btn-sm btn-info"><i class="fa fa-edit"></i></a>
-
-                <button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.connection.destroy', $data->id) . ' " title="Delete"><i class="fa fa-trash-alt"></i></button>
-
-                ';
+                        if (Auth::user()->can('connection_edit')) {
+                            $edit = '<a href="' . route('admin.connection.edit', $data->id) . ' " class="btn btn-sm btn-info" title="Edit"><i class="fa fa-edit"></i></a> ';
+                        } else {
+                            $edit = "";
+                        }
+                        if (Auth::user()->can('connection_delete')) {
+                            $delete = ' <button id="messageShow" class="btn btn-sm btn-danger btn-delete" data-remote=" ' . route('admin.connection.destroy', $data->id) . ' " title="Delete"><i class="fa fa-trash-alt"></i></button>';
+                        } else {
+                            $delete = " ";
+                        }
+                        return $edit.$delete;
                     })
 
                     ->rawColumns(['status', 'action', 'description'])
-                    ->toJson(); //--- Returning Json Data To Client Side
+                    ->toJson();
             }
         } catch (\Exception $exception) {
             return redirect()->back()->with('error', $exception->getMessage());
@@ -87,7 +97,6 @@ class ConnectionTypeController extends Controller
      */
     public function store(Request $request)
     {
-        // dd($request->all());
         $messages = array(
             'name.required' => 'Please enter an connection name',
             'code.required' => 'Please enter an connection code',
@@ -129,13 +138,11 @@ class ConnectionTypeController extends Controller
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-    // start auto code generate function
 
     public function code()
     {
         try {
             do {
-
                 $code = random_int(10000, 99999);
             } while (ConnectionType::where("code", "=", $code)->exists());
             return $code;
@@ -143,7 +150,6 @@ class ConnectionTypeController extends Controller
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-    //  {{-- end auto code generate function --}}
 
     /**
      * Update the specified resource in storage.
@@ -153,7 +159,6 @@ class ConnectionTypeController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    // start update function
     public function update(Request $request, $id)
     {
         $messages = array(
@@ -180,7 +185,6 @@ class ConnectionTypeController extends Controller
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-    // end update function
 
     /**
      * Remove the specified resource from storage.
@@ -189,7 +193,6 @@ class ConnectionTypeController extends Controller
      * @return \Illuminate\Http\Response
      */
 
-    // start delete function
     public function destroy($id)
     {
         try {
@@ -200,13 +203,10 @@ class ConnectionTypeController extends Controller
             return redirect()->back()->with('error', $exception->getMessage());
         }
     }
-    // end delete function
 
-    //status change
     public function StatusChange(Request $request)
     {
         $id = $request->id;
-
         $status_check   = ConnectionType::findOrFail($id);
         $status         = $status_check->status;
 
@@ -217,14 +217,11 @@ class ConnectionTypeController extends Controller
         }
 
         $data           = array();
-
         $data['status'] = $status_update;
-
         ConnectionType::where('id', $id)->update($data);
 
         if ($status_update == 1) {
             return "success";
-            exit();
         } else {
             return "failed";
         }

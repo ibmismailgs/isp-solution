@@ -1,6 +1,6 @@
 <x-app-layout>
     @push('css')
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="{{ asset('backend/plugins/DataTables/datatables.min.css') }}">
     <link rel="stylesheet" type="text/css" href="{{asset('app-assets/vendors/css/extensions/toastr.css')}}">
     @endpush
     @section('title', 'Paid-Clients')
@@ -15,23 +15,16 @@
                     <h4>List of Paid-Clients</h4>
                 </div>
             </div>
-            <div class="page-title-actions">
-                {{-- <a href="{{ route('admin.subscriber.create') }}" type="button" class="btn btn-sm btn-info">
-                    <i class="fas fa-plus mr-1"></i>
-                    Create
-                </a> --}}
-            </div>
         </div>
     </x-slot>
 
-    <!-- Main Content -->
     <div class="container-fluid">
     	<div class="page-header">
             <div class="d-inline">
                 @if (Session::has('message'))
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
                         {{Session::get('message')}}
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <button title="Close Button" type="button" class="close" data-dismiss="alert" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
@@ -40,7 +33,7 @@
                  @if (Session::has('error'))
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     {{Session::get('error')}}
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <button title="Close Button" type="button" class="close" data-dismiss="alert" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -62,7 +55,6 @@
                                     <th>Package Name</th>
                                     <th>Amount</th>
                                     <th>IP Address</th>
-                                    <th>Bill Status</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -78,7 +70,7 @@
 
     </div>
     @push('js')
-    <script src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+    <script src="{{ asset('backend/plugins/DataTables/datatables.min.js') }}"></script>
     <script src="{{ asset('app-assets/vendors/js/extensions/toastr.min.js') }}"></script>
     <script>
         var i = 1;
@@ -109,13 +101,68 @@
             {data: 'packages.name', name: 'packages'},
             {data: 'total_amount', name: 'total_amount'},
             {data: 'subscribers.ip_address', name: 'subscribers'},
-            {data: 'status', searchable: false, orderable: false},
             {data: 'action', searchable: false, orderable: false}
             ],
+            dom: "<'row'<'col-sm-2'l><'col-sm-7 text-center'B><'col-sm-3'f>>tipr",
+                    buttons: [
+                            {
+                                extend: 'copy',
+                                className: 'btn-sm btn-info',
+                                title: 'Paid-Clients',
+                                header: true,
+                                footer: true,
+                                exportOptions: {
+                                    columns: ['0,1,2,3,4,5'],
+                                }
+                            },
+                            {
+                                extend: 'csv',
+                                className: 'btn-sm btn-success',
+                                title: 'Paid-Clients',
+                                header: true,
+                                footer: true,
+                                exportOptions: {
+                                    columns: ['0,1,2,3,4,5'],
+                                }
+                            },
+                            {
+                                extend: 'excel',
+                                className: 'btn-sm btn-dark',
+                                title: 'Paid-Clients',
+                                header: true,
+                                footer: true,
+                                exportOptions: {
+                                    columns: ['0,1,2,3,4,5'],
+                                }
+                            },
+                            {
+                                extend: 'pdf',
+                                className: 'btn-sm btn-primary',
+                                title: 'Paid-Clients',
+                                pageSize: 'A2',
+                                header: true,
+                                footer: true,
+                                exportOptions: {
+                                    columns: ['0,1,2,3,4,5'],
+                                }
+                            },
+                            {
+                                extend: 'print',
+                                className: 'btn-sm btn-danger',
+                                title: 'Paid-Clients',
+                                pageSize: 'A2',
+                                header: true,
+                                footer: true,
+                                orientation: 'landscape',
+                                exportOptions: {
+                                    columns: ['0,1,2,3,4,5'],
+                                    stripHtml: false
+                                }
+                            }
+                        ],
 
         });
 
     </script>
-
     @endpush
 </x-app-layout>

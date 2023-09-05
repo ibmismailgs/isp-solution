@@ -23,14 +23,13 @@
         </div>
     </x-slot>
 
-    <!-- Main Content -->
     <div class="container-fluid">
     	<div class="page-header">
             <div class="d-inline">
                 @if (Session::has('message'))
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
                         {{Session::get('message')}}
-                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <button title="Close Button" type="button" class="close" data-dismiss="alert" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
@@ -39,7 +38,7 @@
                 @if (Session::has('error'))
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     {{Session::get('error')}}
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <button title="Close Button" type="button" class="close" data-dismiss="alert" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -49,10 +48,10 @@
     </div>
     <div class="card">
         <div class="card-body">
-            <form action="{{ route('admin.bill-generate') }}" method="POST">
+            <form action="{{ route('admin.bill-generate') }}" method="POST" id="form">
             @csrf
             <div class="row">
-                <div class="col-sm-6">
+                <div class="col-sm-4">
                     <div class="form-group">
                         <label for="billing_month"> Billing Month <span class="text-red">*</span></label>
                             <input type="text" name="billing_month" id="billing_month" value="{{ old('billing_month') }}" class="form-control datepicker  @error('billing_month') is-invalid @enderror" placeholder="Enter billing month" >
@@ -65,7 +64,7 @@
                     </div>
                 </div>
 
-                <div class="col-sm-6">
+                <div class="col-sm-4">
                     <div class="form-group">
                         <label for="bill_description">Description</label>
                         <textarea name="bill_description" id="bill_description" style="height: 38px" class="form-control" placeholder="Enter your description">{!! old('bill_description') !!}</textarea>
@@ -75,7 +74,7 @@
 
                 <div class="row">
                     <div class="col-md-12">
-                        <button class="btn btn-primary btn-sm" type="submit" id="search" name="search"><i class="fa fa-search"></i> Search</button>
+                        <button title="Search Button" class="btn btn-primary btn-sm" type="submit" id="search" name="search"><i class="fa fa-search"></i> Search</button>
                     </div>
                 </div>
             </form>
@@ -91,15 +90,16 @@
                          <table id="example" class="table table-hover table-bordered ">
                             <thead>
                                 <tr>
-                                    <th>Subscriber ID</th>
-                                    <th>Subscriber Name</th>
-                                    <th>Package Name</th>
-                                    <th>Package Amount</th>
-                                    <th>Bill Status</th>
-                                    <th>Bill Adjust</th>
-                                    <th>Extra Add/Sub </th>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Package </th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Account</th>
+                                    <th>Adjust Bill</th>
+                                    <th>Add/Sub </th>
                                     <th>Used Days</th>
-                                    <th>Total Amount</th>
+                                    <th>Total</th>
                                 </tr>
                             </thead>
 
@@ -109,7 +109,7 @@
                         </table>
                         <input type="hidden" name="bill_month" id="bill_month">
                         <textarea hidden="hidden" name="description" id="description" style="height: 38px" class="form-control" placeholder="Enter your description">{!! old('bill_description') !!}</textarea>
-                        <button onclick="Message('are you sure ?')" type="submit" id="generate" class="btn btn-success generate">Generate</button>
+                        <button title="Submit Button" onclick="Message('are you sure ?')" type="submit" id="generate" class="btn btn-success generate">Generate</button>
                        </form>
 
                     </div>
@@ -140,8 +140,7 @@
         var billing_month = '';
         var description = '';
           $('#search').on('click',function(event){
-
-             event.preventDefault();
+            event.preventDefault();
             billing_month = $("#billing_month").val();
             bill_description = $("#bill_description").val();
              var search = $("#search").val();
@@ -163,6 +162,8 @@
                         $('#description').val(bill_description);
 
                         var x = 1;
+
+                        if (billing_month !== '') {
 
                         var dTable = $('#example').DataTable({
                             order: [],
@@ -188,6 +189,7 @@
                                 {data: 'packages.name', name: 'packages'},
                                 {data: 'packages.amount', name: 'packages'},
                                 {data: 'status', name: 'status'},
+                                {data: 'AccountName', name: 'AccountName'},
                                 {data: 'add_sub', name: 'add_sub'},
                                 {data: 'input', name: 'input'},
                                 {data: 'used_day', name: 'used_day'},
@@ -196,50 +198,62 @@
                             ],
 
                         });
+                    } else {
+                    alert('Enter Billing Month')
+                }
                     }
                     }});
             });
 
-            // bill calculate
-
           function calculation(id){
-
             var add_sub = $('#add_sub'+id).val();
+
             if(add_sub == 1){
+                var adjust_bill = $('#adjust_bill'+id).val();
+                var total = $('#prev_amount'+id).val();
+                var sum =  parseFloat(total)  + parseFloat(adjust_bill) ;
+                $('#total_amount'+id).val(sum);
+             }else if(add_sub == 2){
+                var adjust_bill = $('#adjust_bill'+id).val();
+                var total = $('#prev_amount'+id).val();
+                var sum =  parseFloat(total) - parseFloat(adjust_bill) ;
+                $('#total_amount'+id).val(sum);
+                }
+         };
 
-            var adjust_bill = $('#adjust_bill'+id).val();
-            var total = $('#prev_amount'+id).val();
-            var sum =  parseFloat(total)  + parseFloat(adjust_bill) ;
-            $('#total_amount'+id).val(sum);
-
-            }else if(add_sub == 2){
-
-            var adjust_bill = $('#adjust_bill'+id).val();
-            var total = $('#prev_amount'+id).val();
-            var sum =  parseFloat(total) - parseFloat(adjust_bill) ;
-            $('#total_amount'+id).val(sum);
-            }
-        };
-
-          function addSub(value){
-
+           function addSub(value){
             var add_sub = $('#add_sub'+value).val();
+
             if(add_sub == 1){
-
-            var adjust_bill = $('#adjust_bill'+value).val();
-            var total = $('#prev_amount'+value).val();
-            var sum =  parseFloat(total)  + parseFloat(adjust_bill) ;
-            $('#total_amount'+value).val(sum);
-
-            } else if(add_sub == 2){
-
-            var adjust_bill = $('#adjust_bill'+value).val();
-            var total = $('#prev_amount'+value).val();
-            var sum =  parseFloat(total) - parseFloat(adjust_bill) ;
-            $('#total_amount'+value).val(sum);
+                var adjust_bill = $('#adjust_bill'+value).val();
+                var total = $('#prev_amount'+value).val();
+                var sum =  parseFloat(total)  + parseFloat(adjust_bill) ;
+                $('#total_amount'+value).val(sum);
+             } else if(add_sub == 2){
+                var adjust_bill = $('#adjust_bill'+value).val();
+                var total = $('#prev_amount'+value).val();
+                var sum =  parseFloat(total) - parseFloat(adjust_bill) ;
+                $('#total_amount'+value).val(sum);
             }
-        };
+         };
 
+        function getAccount(id){
+                var status= $('#status'+id).val();
+                $.ajax({
+                    url: "{{ route('admin.all-accounts') }}",
+                    type: "GET",
+                    data: {
+                        'status':status,
+                    },
+                    success: function(data){
+                        $('#account_id'+id).empty();
+                        $('#account_id'+id).append("<option value=''>Select Account</option>");
+                        $.each(data, function(key, value){
+                            $('#account_id'+id).append("<option value="+value.id+">"+value.name+"</option>");
+                        });
+                    },
+                });
+            }
     </script>
     @endpush
 </x-app-layout>

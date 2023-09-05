@@ -1,9 +1,5 @@
 <x-app-layout>
-    @push('css')
-
-    @endpush
     @section('title', 'Deposit/Withdraw Details')
-
     <x-slot name="header">
         <div class="page-title-wrapper">
             <div class="page-title-heading">
@@ -15,14 +11,16 @@
                 </div>
             </div>
             <div class="page-title-actions">
-                 <a href="{{ route('admin.transactions.index') }}" type="button" class="btn btn-sm btn-dark">
+                 <a title="Back Button" href="{{ route('admin.transactions.index') }}" type="button" class="btn btn-sm btn-dark">
                     <i class="fas fa-arrow-left mr-1"></i>
                     Back
                 </a>
-                <a href="{{ route('admin.transactions.create') }}" type="button" class="btn btn-sm btn-info">
-                    <i class="fas fa-plus mr-1"></i>
-                    Create
-                </a>
+                 @can('create')
+                    <a title="Create Button" href="{{ route('admin.transactions.create') }}" type="button" class="btn btn-sm btn-info">
+                        <i class="fas fa-plus mr-1"></i>
+                        Create
+                    </a>
+                @endcan
             </div>
         </div>
     </x-slot>
@@ -105,43 +103,19 @@
                                <tr>
                                     <th> Purpose </th>
                                     <td>
-                                        @if( $data->purpose  == 1)
-                                            Expense
-                                        @elseif($data->purpose  == 2)
-                                            Given Payment
-                                        @elseif($data->purpose  == 3)
-                                             Received Payment
-                                        @elseif($data->purpose  == 4)
-                                            Deposit
-                                        @endif
-                                    </td>
-                                </tr>
-
-                               <tr>
-                                    <th> Status</th>
-                                    <td>
-                                        @if( $data->status == 1)
-                                            Active
-                                        @else
-                                            Inactive
-                                        @endif
-                                    </td>
+                                        {{ $data->transaction_reason}} </td>
                                 </tr>
 
                                 <tr>
                                     <th>Description</th>
                                     <td>{{ $data->description }}</td>
                                 </tr>
-
                             </thead>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
-    @push('js')
 
-    @endpush
 </x-app-layout>

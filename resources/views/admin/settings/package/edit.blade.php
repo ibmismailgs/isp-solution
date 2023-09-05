@@ -1,7 +1,6 @@
 <x-app-layout>
 
     @section('title', 'Edit Package')
-
     <x-slot name="header">
         <div class="page-title-wrapper">
             <div class="page-title-heading">
@@ -13,7 +12,7 @@
                 </div>
             </div>
             <div class="page-title-actions">
-                <a href="{{ route('admin.package.index') }}" type="button" class="btn btn-sm btn-dark">
+                <a title="Back Button" href="{{ route('admin.package.index') }}" type="button" class="btn btn-sm btn-dark">
                     <i class="fas fa-arrow-left mr-1"></i>
                     Back
                 </a>
@@ -21,14 +20,13 @@
         </div>
     </x-slot>
 
-    <!-- Main Content -->
     <div class="container-fluid">
           <div class="page-header">
             <div class="d-inline">
                 @if (Session::has('error'))
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     {{Session::get('error')}}
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <button title="Close Button" type="button" class="close" data-dismiss="alert" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -132,35 +130,24 @@
                                     <div class="form-group">
                                         <label for="status"> Status <span class="text-red">*</span></label>
                                         <select name="status" id="status" class="form-control">
-                                            <option value="{{ $package->status }}" selected="">
-                                                @if($package->status == 1) Active
-                                                @else Inactive
-                                                @endif
-                                            </option>
-                                            <option value="1">Active</option>
-                                            <option value="0">Inactive</option>
+                                            <option value="1" {{ $package->status == 1 ? 'selected' : '' }}>Active</option>
+                                            <option value="0" {{ $package->status == 0 ? 'selected' : '' }}>Inactive</option>
                                         </select>
-
-                                        @error('status')
-                                        <span class="text-danger" role="alert">
-                                            <strong>{{ $message }}</strong>
-                                        </span>
-                                        @enderror
-
                                     </div>
                                 </div>
 
                                 <div class="col-sm-12">
                                     <div class="form-group">
                                         <label for="description"> Description <span class="text-red">*</span></label>
-                                        <textarea name="description" id="description" class="form-control @error('description') is-invalid @enderror" placeholder="Describe here...">{{ $package->description }}</textarea>
+                                        <textarea name="description"
+                                        rows="3" id="description" class="form-control @error('description') is-invalid @enderror" placeholder="Describe here...">{{ $package->description }}</textarea>
                                     </div>
                                 </div>
 
                             </div>
                             <div class="row mt-30">
                                 <div class="col-sm-12">
-                                    <button type="submit" class="btn btn-success mr-2">Update</button>
+                                    <button title="Update Button" type="submit" class="btn btn-success mr-2">Update</button>
                                 </div>
                             </div>
                         </form>
@@ -173,7 +160,6 @@
     @push('js')
     <script type="text/javascript">
          $(document).ready(function(){
-
             $('#code_generate').click(function(e){
                e.preventDefault();
                $.ajax({

@@ -2,7 +2,6 @@
     <html lang="en">
     <head>
         <title>Expense Invoice</title>
-        <!-- initiate head with meta tags, css and script -->
         <meta charset="utf-8">
         <meta http-equiv="x-ua-compatible" content="ie=edge">
         <meta name="description" content="">
@@ -58,10 +57,9 @@
                 <div class="card">
                 <div class="card-header"><img class="logo" src="{{asset('logo.png')}}">
                                    Invoice <strong># {{ $data->expense_number }}</strong>
-                    {{-- <strong> ISP-Invoice </strong> --}}
                     <a class="btn btn-sm btn-secondary float-right mr-1 d-print-none" href="#" onclick="javascript:window.print();" data-abc="true">
                         <i class="fa fa-print"></i> Print</a>
-                        <a class="btn btn-sm btn-info float-right mr-1 d-print-none" href="#" data-abc="true">
+                        <a title="Save Button" class="btn btn-sm btn-info float-right mr-1 d-print-none" href="#" data-abc="true">
                             <i class="fa fa-save"></i> Save</a>
                         </div>
                         <div class="card-body">
@@ -76,17 +74,6 @@
                                 </div>
 
                                 <div class="col-sm-4">
-                                    {{-- <div>
-                                        <strong>BBBootstrap.com</strong>
-                                    </div>
-                                    <div>42, Awesome Enclave</div>
-                                    <div>New York City, New york, 10394</div>
-                                    <div>Email: admin@bbbootstrap.com</div>
-                                    <div>Phone: +48 123 456 789</div> --}}
-                                </div>
-
-                                <div class="col-sm-4">
-                                    {{-- <div> Invoice <strong>#WLT-120</strong> </div> --}}
                                     <div> <strong>{{ $data->date }}</strong> </div>
                                     <div>WLT ISP Service</div>
                                     <div>House# 23/A, Road #3/C</div>
@@ -150,12 +137,6 @@
 
                                                 <td class="right">{{ $data->adjust_amount ?? 0}}</td>
                                             </tr>
-                                            {{-- <tr>
-                                                <td class="left">
-                                                    <strong>VAT (10%)</strong>
-                                                </td>
-                                                <td class="right">$679,76</td>
-                                            </tr> --}}
                                             <tr>
                                                 <td class="left">
                                                     <strong>Total</strong>

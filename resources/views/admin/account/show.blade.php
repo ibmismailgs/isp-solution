@@ -1,9 +1,5 @@
 <x-app-layout>
-    @push('css')
-
-    @endpush
     @section('title', 'Account Details')
-
     <x-slot name="header">
         <div class="page-title-wrapper">
             <div class="page-title-heading">
@@ -15,19 +11,18 @@
                 </div>
             </div>
             <div class="page-title-actions">
-                 <a href="{{ route('admin.account.index') }}" type="button" class="btn btn-sm btn-dark">
+                 <a title="Back Button" href="{{ route('admin.account.index') }}" type="button" class="btn btn-sm btn-dark">
                     <i class="fas fa-arrow-left mr-1"></i>
                     Back
                 </a>
-                <a href="{{ route('admin.account.create') }}" type="button" class="btn btn-sm btn-info">
-                    <i class="fas fa-plus mr-1"></i>
-                    Create
-                </a>
+                <a title="Create Button" href="{{ route('admin.account.create') }}" type="button" class="btn btn-sm btn-info">
+                        <i class="fas fa-plus mr-1"></i>
+                        Create
+                    </a>
             </div>
         </div>
     </x-slot>
 
-    <!-- Main Content -->
     <div class="container-fluid">
     	<div class="page-header">
             <div class="d-inline">
@@ -99,16 +94,12 @@
                                     <th>Description</th>
                                     <td>{{ $data->description }}</td>
                                 </tr>
-
                             </thead>
                         </table>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
-    @push('js')
 
-    @endpush
 </x-app-layout>

@@ -26,9 +26,9 @@
         </button>
     </form><!-- /form -->
 
-    @if (Route::has('password.request'))
+    {{-- @if (Route::has('password.request'))
         <a href="{{ route('password.request') }}" class="forgot-password">
             {{ __('Forgot the password?') }}
         </a>
-    @endif
+    @endif --}}
 </x-guest-layout>
